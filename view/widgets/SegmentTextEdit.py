@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QTextEdit, QTreeWidgetItem
 
 from model import ChapterFileWrapper
-from widgets import ChapterTreeWidget, widget_utils
+from view.widgets import ChapterTreeWidget, widget_utils
 
 
 class SegmentTextEdit(QTextEdit):

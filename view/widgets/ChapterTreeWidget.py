@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtSignal, QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QMessageBox
 
 from model import ChapterFileWrapper, generate_new_branch, generate_new_segment
-from widgets import widget_utils
+from view.widgets import widget_utils
 
 
 class ChapterTreeWidget(QTreeWidget):

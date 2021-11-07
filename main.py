@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog
 
-from widgets import MainWindow
+from view.widgets import MainWindow
 
 
 def main():

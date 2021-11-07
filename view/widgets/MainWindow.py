@@ -3,7 +3,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter
 
 from model import ChapterFileWrapper
-from widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget
+from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget
 
 
 class MainWindow(QMainWindow):

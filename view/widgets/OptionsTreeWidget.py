@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox
 
 from model import ChapterFileWrapper, generate_new_option
 from utils import find_index
-from widgets import ChapterTreeWidget, widget_utils
+from view.widgets import ChapterTreeWidget, widget_utils
 
 
 class OptionsTreeWidget(QTreeWidget):
