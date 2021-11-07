@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QTextEdit, QTreeWidgetItem
 
-from model import ChapterFileWrapper
+from questlib import Chapter
 from view import FileStateContainer
 from view.widgets import ChapterTreeWidget, widget_utils
 
@@ -8,7 +8,7 @@ from view.widgets import ChapterTreeWidget, widget_utils
 class SegmentTextEdit(QTextEdit):
     NO_TARGET_MESSAGE = 'Выберите сегмент истории для редактирования...'
 
-    def __init__(self, file_state: FileStateContainer, chapter: ChapterFileWrapper, tree: ChapterTreeWidget):
+    def __init__(self, file_state: FileStateContainer, chapter: Chapter, tree: ChapterTreeWidget):
         super().__init__()
         self.file_state = file_state
         self.chapter = chapter
@@ -26,15 +26,15 @@ class SegmentTextEdit(QTextEdit):
         self.setText(self.NO_TARGET_MESSAGE)
 
     def on_text_changed(self) -> None:
-        if self.segment is not None and self.segment['text'] != self.toPlainText():
-            self.segment['text'] = self.toPlainText()
+        if self.segment is not None and self.segment.text != self.toPlainText():
+            self.segment.text = self.toPlainText()
             self.file_state.set_dirty()
 
     def on_tree_current_item_changed(self, current: QTreeWidgetItem, _) -> None:
         indexes = widget_utils.tree_widget_item_indexes(current)
         if len(indexes) == 2:  # segment
-            self.segment = self.chapter.data['branches'][indexes[0]]['segments'][indexes[1]]
-            self.setText(self.segment['text'])
+            self.segment = self.chapter.branches[indexes[0]].segments[indexes[1]]
+            self.setText(self.segment.text)
             self.setDisabled(False)
         else:
             self.remove_target()

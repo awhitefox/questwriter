@@ -10,15 +10,15 @@ from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget
 class MainWindow(QMainWindow):
     def __init__(self, file_path: str):
         super().__init__()
-        self.chapter = ChapterFileWrapper(file_path)
+        self.file = ChapterFileWrapper(file_path)
         self.file_state = FileStateContainer()
 
         # Widgets
 
-        self.chapter_tree = ChapterTreeWidget(self.file_state, self.chapter)
+        self.chapter_tree = ChapterTreeWidget(self.file_state, self.file.data)
         self.save_button = QPushButton('Сохранить')
-        self.segment_text_edit = SegmentTextEdit(self.file_state, self.chapter, self.chapter_tree)
-        self.options_tree = OptionsTreeWidget(self.file_state, self.chapter, self.chapter_tree)
+        self.segment_text_edit = SegmentTextEdit(self.file_state, self.file.data, self.chapter_tree)
+        self.options_tree = OptionsTreeWidget(self.file_state, self.file.data, self.chapter_tree)
 
         self.setCentralWidget(self._generate_main_widget())
 
@@ -60,11 +60,11 @@ class MainWindow(QMainWindow):
         return splitter
 
     def _save_file(self):
-        self.chapter.save_changes()
+        self.file.save_changes()
         self.file_state.set_clean()
 
     def on_file_state_changed(self, state: FileState):
-        s = f'{self.chapter.path} - questwriter'
+        s = f'{self.file.path} - questwriter'
         if state == FileState.DIRTY:
             s += '*'
         self.setWindowTitle(s)
@@ -74,5 +74,5 @@ class MainWindow(QMainWindow):
             self._save_file()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
-        self.chapter.close()
+        self.file.close()
         event.accept()
