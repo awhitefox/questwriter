@@ -4,14 +4,16 @@ from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox
 
 from model import ChapterFileWrapper, generate_new_option
 from utils import find_index
+from view import FileStateContainer
 from view.widgets import ChapterTreeWidget, widget_utils
 
 
 class OptionsTreeWidget(QTreeWidget):
     optionListChanged = pyqtSignal()
 
-    def __init__(self, chapter: ChapterFileWrapper, tree: ChapterTreeWidget):
+    def __init__(self, file_state: FileStateContainer, chapter: ChapterFileWrapper, tree: ChapterTreeWidget):
         super().__init__()
+        self.file_state = file_state
         self.chapter = chapter
         self.options = None
         self.branch_i = None
@@ -59,7 +61,7 @@ class OptionsTreeWidget(QTreeWidget):
         goto['branch_id'] = self.chapter.data['branches'][0]['id']
         goto['segment_id'] = self.chapter.data['branches'][0]['segments'][0]['id']
         self.options.insert(selected_i + 1, new)
-        self.chapter.mark_dirty()
+        self.file_state.set_dirty()
 
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
@@ -78,7 +80,7 @@ class OptionsTreeWidget(QTreeWidget):
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
             del self.options[selected_i]
-            self.chapter.mark_dirty()
+            self.file_state.set_dirty()
 
             self.takeTopLevelItem(selected_i)
 
@@ -90,7 +92,7 @@ class OptionsTreeWidget(QTreeWidget):
         option['text'] = item.text(0)
         option['goto']['branch_id'] = item.text(1)
         option['goto']['segment_id'] = item.text(2)
-        self.chapter.mark_dirty()
+        self.file_state.set_dirty()
 
     def on_tree_current_item_changed(self, current: QTreeWidgetItem, _) -> None:
         self.options = None

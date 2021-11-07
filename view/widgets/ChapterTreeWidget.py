@@ -4,14 +4,16 @@ from PyQt5.QtCore import pyqtSignal, QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QMessageBox
 
 from model import ChapterFileWrapper, generate_new_branch, generate_new_segment
+from view import FileStateContainer
 from view.widgets import widget_utils
 
 
 class ChapterTreeWidget(QTreeWidget):
     chapterTreeChanged = pyqtSignal()
 
-    def __init__(self, chapter: ChapterFileWrapper):
+    def __init__(self, file_state: FileStateContainer, chapter: ChapterFileWrapper):
         super().__init__()
+        self.file_state = file_state
         self.chapter = chapter
 
         self.setColumnCount(1)
@@ -88,7 +90,7 @@ class ChapterTreeWidget(QTreeWidget):
         goto['branch_id'] = self.chapter.data['branches'][0]['id']
         goto['segment_id'] = self.chapter.data['branches'][0]['segments'][0]['id']
         self.chapter.data['branches'].insert(target, new)
-        self.chapter.mark_dirty()
+        self.file_state.set_dirty()
 
         new_item = self._generate_branch_item(new)
         self.topLevelItem(0).insertChild(target, new_item)
@@ -115,7 +117,7 @@ class ChapterTreeWidget(QTreeWidget):
             new['text'] = 'Новая концовка'
             del new['options']
         self.chapter.data['branches'][indexes[0]]['segments'].insert(target, new)
-        self.chapter.mark_dirty()
+        self.file_state.set_dirty()
 
         new_item = self._generate_segment_item(new)
         self.topLevelItem(0).child(indexes[0]).insertChild(target, new_item)
@@ -134,7 +136,7 @@ class ChapterTreeWidget(QTreeWidget):
         if res == QMessageBox.Yes:
             del self.chapter.data['branches'][indexes[0]]
             self._cleanup_options_after_branch_deletion(branch['id'])
-            self.chapter.mark_dirty()
+            self.file_state.set_dirty()
 
             item = self.topLevelItem(0).child(indexes[0])
             self.topLevelItem(0).removeChild(item)
@@ -153,7 +155,7 @@ class ChapterTreeWidget(QTreeWidget):
         if res == QMessageBox.Yes:
             del self.chapter.data['branches'][indexes[0]]['segments'][indexes[1]]
             self._cleanup_options_after_segment_deletion(segment['id'])
-            self.chapter.mark_dirty()
+            self.file_state.set_dirty()
 
             item = self.topLevelItem(0).child(indexes[0]).child(indexes[1])
             self.topLevelItem(0).child(indexes[0]).removeChild(item)
@@ -196,7 +198,7 @@ class ChapterTreeWidget(QTreeWidget):
         indexes = widget_utils.tree_widget_item_indexes(item)
         if len(indexes) == 0:  # chapter title
             self.chapter.data['title'] = item.text(0)
-            self.chapter.mark_dirty()
+            self.file_state.set_dirty()
         elif len(indexes) == 1:  # branch title
             self.chapter.data['branches'][indexes[0]]['title'] = item.text(0)
-            self.chapter.mark_dirty()
+            self.file_state.set_dirty()
