@@ -37,7 +37,9 @@ class MainWindow(QMainWindow):
     def _generate_main_widget(self) -> QWidget:
         splitter = QSplitter()
         splitter.addWidget(self._generate_left_side())
+        splitter.setCollapsible(0, False)
         splitter.addWidget(self._generate_right_side())
+        splitter.setCollapsible(1, False)
         splitter.setSizes([300, 900])
         return splitter
 
@@ -55,7 +57,9 @@ class MainWindow(QMainWindow):
         splitter.setOrientation(QtCore.Qt.Vertical)
         splitter.setContentsMargins(0, 10, 10, 10)
         splitter.addWidget(self.segment_text_edit)
+        splitter.setCollapsible(0, False)
         splitter.addWidget(self.options_tree)
+        splitter.setCollapsible(1, False)
         splitter.setSizes([600, 200])
         return splitter
 
