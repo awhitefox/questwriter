@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
 
         self.chapter_tree = ChapterTreeWidget(self.file_state, self.file.data)
         self.save_button = QPushButton('Сохранить')
-        self.segment_text_edit = SegmentTextEdit(self.file_state, self.file.data, self.chapter_tree)
+        self.segment_text_edit = SegmentTextEdit(self.file_state, self.chapter_tree)
         self.options_tree = OptionsTreeWidget(self.file_state, self.file.data, self.chapter_tree)
 
         self.setCentralWidget(self._generate_main_widget())

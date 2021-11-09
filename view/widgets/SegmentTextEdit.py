@@ -1,28 +1,28 @@
-from PyQt5.QtWidgets import QTextEdit, QTreeWidgetItem
+from typing import Union
 
-from questlib import Chapter
+from PyQt5.QtWidgets import QTextEdit
+
+from questlib import Chapter, Branch, Segment
 from view import FileStateContainer
-from view.widgets import ChapterTreeWidget, widget_utils
+from view.widgets import ChapterTreeWidget
 
 
 class SegmentTextEdit(QTextEdit):
     NO_TARGET_MESSAGE = 'Выберите сегмент истории для редактирования...'
 
-    def __init__(self, file_state: FileStateContainer, chapter: Chapter, tree: ChapterTreeWidget):
+    def __init__(self, file_state: FileStateContainer, tree: ChapterTreeWidget):
         super().__init__()
         self.file_state = file_state
-        self.chapter = chapter
         self.segment = None
-        self.remove_target()
+        self._disable()
 
         self.setAcceptRichText(False)
 
         self.textChanged.connect(self.on_text_changed)
-        tree.currentItemChanged.connect(self.on_tree_current_item_changed)
+        tree.current_story_element_changed.connect(self.on_tree_current_story_element_changed)
 
-    def remove_target(self) -> None:
-        self.setDisabled(True)
-        self.segment = None
+    def _disable(self) -> None:
+        self.setEnabled(False)
         self.setText(self.NO_TARGET_MESSAGE)
 
     def on_text_changed(self) -> None:
@@ -30,11 +30,11 @@ class SegmentTextEdit(QTextEdit):
             self.segment.text = self.toPlainText()
             self.file_state.set_dirty()
 
-    def on_tree_current_item_changed(self, current: QTreeWidgetItem, _) -> None:
-        indexes = widget_utils.tree_widget_item_indexes(current)
-        if len(indexes) == 2:  # segment
-            self.segment = self.chapter.branches[indexes[0]].segments[indexes[1]]
-            self.setText(self.segment.text)
-            self.setDisabled(False)
+    def on_tree_current_story_element_changed(self, element: Union[Chapter, Branch, Segment]):
+        if isinstance(element, Segment):
+            self.segment = element
+            self.setText(element.text)
+            self.setEnabled(True)
         else:
-            self.remove_target()
+            self.segment = None
+            self._disable()

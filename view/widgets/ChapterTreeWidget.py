@@ -1,4 +1,6 @@
 import textwrap
+from typing import Union
+
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QMessageBox
@@ -11,6 +13,7 @@ from view.widgets import widget_utils
 
 class ChapterTreeWidget(QTreeWidget):
     chapterTreeChanged = pyqtSignal()
+    current_story_element_changed = pyqtSignal(object)
 
     def __init__(self, file_state: FileStateContainer, chapter: Chapter):
         super().__init__()
@@ -24,9 +27,20 @@ class ChapterTreeWidget(QTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
 
+        self.currentItemChanged.connect(self.on_current_item_changed)
         self.itemChanged.connect(self.on_item_changed)
 
         self.expandAll()
+
+    def get_current_story_element(self) -> Union[Chapter, Branch, Segment]:
+        indexes = widget_utils.tree_widget_item_indexes(self.currentItem())
+        depth = len(indexes)
+        if depth == 0:
+            return self.chapter
+        elif depth == 1:
+            return self.chapter.branches[indexes[0]]
+        elif depth == 2:
+            return self.chapter.branches[indexes[0]].segments[indexes[1]]
 
     def _generate_tree(self) -> None:
         self.clear()
@@ -194,6 +208,10 @@ class ChapterTreeWidget(QTreeWidget):
             return
         text = self.chapter.branches[indexes[0]].segments[indexes[1]].text
         self.currentItem().setText(0, text.replace('\n', ''))
+
+    def on_current_item_changed(self, *_):
+        # noinspection PyUnresolvedReferences
+        self.current_story_element_changed.emit(self.get_current_story_element())
 
     def on_item_changed(self, item: QTreeWidgetItem, _) -> None:
         indexes = widget_utils.tree_widget_item_indexes(item)
