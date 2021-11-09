@@ -111,9 +111,11 @@ class OptionsTreeWidgetItem(QTreeWidgetItem):
         self.setFlags(int(self.flags()) | QtCore.Qt.ItemIsEditable)
 
         self.branch_combo_box = QComboBox()
+        self.branch_combo_box.view().setTextElideMode(QtCore.Qt.ElideRight)
         self.refresh_branch_options()
 
         self.segment_combo_box = QComboBox()
+        self.segment_combo_box.view().setTextElideMode(QtCore.Qt.ElideRight)
         self.refresh_segment_options()
 
         self.branch_combo_box.currentIndexChanged.connect(self.on_branch_combo_box_index_changed)
@@ -133,7 +135,7 @@ class OptionsTreeWidgetItem(QTreeWidgetItem):
     def refresh_segment_options(self) -> None:
         self.segment_combo_box.clear()
         branch_index = self.branch_combo_box.currentIndex()
-        segment_texts = [s.text for s in self.chapter.branches[branch_index].segments]
+        segment_texts = [s.text.replace('\n', ' ') for s in self.chapter.branches[branch_index].segments]
         if branch_index == self.branch_i:
             segment_texts[self.segment_i] = '(этот сегмент)'
 
