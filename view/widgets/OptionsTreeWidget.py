@@ -10,8 +10,6 @@ from view.widgets import ChapterTreeWidget, widget_utils
 
 
 class OptionsTreeWidget(QTreeWidget):
-    optionListChanged = pyqtSignal()
-
     def __init__(self, file_state: FileStateContainer, chapter: Chapter, tree: ChapterTreeWidget):
         super().__init__()
         self.file_state = file_state
@@ -68,9 +66,6 @@ class OptionsTreeWidget(QTreeWidget):
         self.insertTopLevelItem(selected_i + 1, new_item)
         new_item.init_widgets(self)
 
-        # noinspection PyUnresolvedReferences
-        self.optionListChanged.emit()
-
     def _delete_option(self) -> None:
         title = 'Удалить'
 
@@ -82,11 +77,7 @@ class OptionsTreeWidget(QTreeWidget):
         if res == QMessageBox.Yes:
             del self.options[selected_i]
             self.file_state.set_dirty()
-
             self.takeTopLevelItem(selected_i)
-
-            # noinspection PyUnresolvedReferences
-            self.optionListChanged.emit()
 
     def on_item_changed(self, item: QTreeWidgetItem, _) -> None:
         option = self.options[self.indexOfTopLevelItem(item)]

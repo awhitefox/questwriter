@@ -12,7 +12,6 @@ from view.widgets import widget_utils
 
 
 class ChapterTreeWidget(QTreeWidget):
-    chapterTreeChanged = pyqtSignal()
     current_story_element_changed = pyqtSignal(object)
 
     def __init__(self, file_state: FileStateContainer, chapter: Chapter):
@@ -111,9 +110,6 @@ class ChapterTreeWidget(QTreeWidget):
         self.topLevelItem(0).insertChild(target, new_item)
         new_item.setExpanded(True)
 
-        # noinspection PyUnresolvedReferences
-        self.chapterTreeChanged.emit()
-
     def _add_segment(self) -> None:
         indexes = widget_utils.tree_widget_item_indexes(self.currentItem())
         if len(indexes) == 1:
@@ -137,9 +133,6 @@ class ChapterTreeWidget(QTreeWidget):
         new_item = self._generate_segment_item(new)
         self.topLevelItem(0).child(indexes[0]).insertChild(target, new_item)
 
-        # noinspection PyUnresolvedReferences
-        self.chapterTreeChanged.emit()
-
     def _delete_branch(self) -> None:
         title = 'Удалить'
 
@@ -156,9 +149,6 @@ class ChapterTreeWidget(QTreeWidget):
             item = self.topLevelItem(0).child(indexes[0])
             self.topLevelItem(0).removeChild(item)
 
-            # noinspection PyUnresolvedReferences
-            self.chapterTreeChanged.emit()
-
     def _delete_segment(self) -> None:
         title = 'Удалить'
 
@@ -174,9 +164,6 @@ class ChapterTreeWidget(QTreeWidget):
 
             item = self.topLevelItem(0).child(indexes[0]).child(indexes[1])
             self.topLevelItem(0).child(indexes[0]).removeChild(item)
-
-            # noinspection PyUnresolvedReferences
-            self.chapterTreeChanged.emit()
 
     def _cleanup_options_after_branch_deletion(self, deleted_branch_id: str) -> None:
         br_id = self.chapter.branches[0].id
