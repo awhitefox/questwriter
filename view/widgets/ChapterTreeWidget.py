@@ -65,7 +65,7 @@ class ChapterTreeWidget(QTreeWidget):
 
     # noinspection PyMethodMayBeStatic
     def _generate_segment_item(self, segment: Segment) -> QTreeWidgetItem:
-        return QTreeWidgetItem([segment.text.replace('\n', '')])
+        return QTreeWidgetItem([segment.text.replace('\n', ' ')])
 
     def _context_menu(self, position: QPoint) -> None:
         indexes = widget_utils.tree_widget_item_indexes(self.currentItem())
