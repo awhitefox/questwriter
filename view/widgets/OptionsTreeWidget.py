@@ -10,6 +10,8 @@ from view.widgets import ChapterTreeWidget, widget_utils
 
 
 class OptionsTreeWidget(QTreeWidget):
+    current_option_changed = pyqtSignal(object)
+
     def __init__(self, file_state: FileStateContainer, chapter: Chapter, tree: ChapterTreeWidget):
         super().__init__()
         self.file_state = file_state
@@ -25,9 +27,13 @@ class OptionsTreeWidget(QTreeWidget):
         self.customContextMenuRequested.connect(self._context_menu)
 
         self.itemChanged.connect(self.on_item_changed)
+        self.currentItemChanged.connect(self.on_current_item_changed)
         tree.currentItemChanged.connect(self.on_tree_current_item_changed)
 
         self.setEnabled(False)
+
+    def get_current_option(self) -> Option:
+        return self.options[self.indexOfTopLevelItem(self.currentItem())]
 
     def _generate_items(self) -> None:
         self.clear()
@@ -39,6 +45,8 @@ class OptionsTreeWidget(QTreeWidget):
                 item.init_widgets(self)
         else:
             self.setEnabled(False)
+            # noinspection PyUnresolvedReferences
+            self.current_option_changed.emit(None)
 
     def _generate_item(self, option: Option) -> 'OptionsTreeWidgetItem':
         return OptionsTreeWidgetItem(self.chapter, option, self.branch_i, self.segment_i)
@@ -85,6 +93,10 @@ class OptionsTreeWidget(QTreeWidget):
         option.goto.branch_id = item.text(1)
         option.goto.segment_id = item.text(2)
         self.file_state.set_dirty()
+
+    def on_current_item_changed(self, *_) -> None:
+        # noinspection PyUnresolvedReferences
+        self.current_option_changed.emit(self.get_current_option())
 
     def on_tree_current_item_changed(self, current: QTreeWidgetItem, _) -> None:
         self.options = None

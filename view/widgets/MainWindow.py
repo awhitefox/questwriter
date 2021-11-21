@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSpl
 
 from model import ChapterFileWrapper
 from view import FileState, FileStateContainer
-from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget
+from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, VariableTreeWidget
 
 
 class MainWindow(QMainWindow):
@@ -60,7 +60,18 @@ class MainWindow(QMainWindow):
         splitter.setCollapsible(0, False)
         splitter.addWidget(self.options_tree)
         splitter.setCollapsible(1, False)
-        splitter.setSizes([600, 200])
+        splitter.addWidget(self._generate_right_bottom_side())
+        splitter.setCollapsible(2, False)
+        splitter.setSizes([400, 200, 200])
+        return splitter
+
+    def _generate_right_bottom_side(self) -> QWidget:
+        splitter = QSplitter()
+        splitter.addWidget(VariableTreeWidget(self.file_state, self.file.data.variables, self.options_tree))
+        splitter.setCollapsible(0, False)
+        splitter.addWidget(QWidget())
+        splitter.setCollapsible(1, False)
+        splitter.setSizes([450, 450])
         return splitter
 
     def _save_file(self):
