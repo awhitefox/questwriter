@@ -15,7 +15,7 @@ class OperationTreeWidget(QTreeWidget):
         super().__init__()
         self.file_state = file_state
         self.variables = variables
-        self.operations = None
+        self.option = None
         self.branch_i = None
         self.segment_i = None
 
@@ -31,9 +31,9 @@ class OperationTreeWidget(QTreeWidget):
 
     def _generate_items(self) -> None:
         self.clear()
-        if self.operations is not None:
+        if self.option.operations is not None:
             self.setEnabled(True)
-            for o in self.operations:
+            for o in self.option.operations:
                 item = self._generate_item(o)
                 self.addTopLevelItem(item)
                 item.init_widgets(self)
@@ -52,7 +52,7 @@ class OperationTreeWidget(QTreeWidget):
         menu.addSeparator()
 
         menu.addAction('Удалить', self._delete_operation)
-        menu.actions()[-1].setEnabled(len(self.options) > 1)
+        menu.actions()[-1].setEnabled(self.option.operations is not None and len(self.option.operations) > 1)
 
         menu.exec_(self.viewport().mapToGlobal(position))
 
@@ -64,7 +64,10 @@ class OperationTreeWidget(QTreeWidget):
         new.type = OperationType.Set
         new.value = self.variables[0].initial_value
 
-        self.operations.insert(selected_i + 1, new)
+        if self.option.operations is None:
+            self.option.operations = []
+
+        self.option.operations.insert(selected_i + 1, new)
         self.file_state.set_dirty()
 
         new_item = self._generate_item(new)
@@ -85,11 +88,11 @@ class OperationTreeWidget(QTreeWidget):
 
     def on_current_option_changed(self, o: Option) -> None:
         if o is not None:
-            self.operations = o.operations
+            self.option = o
             self._generate_items()
             self.setEnabled(True)
         else:
-            self.operations = None
+            self.option = None
             self.setEnabled(False)
 
 
