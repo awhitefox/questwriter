@@ -10,7 +10,7 @@ from view import FileStateContainer
 from view.widgets import OptionsTreeWidget
 
 
-class VariableTreeWidget(QTreeWidget):
+class OperationTreeWidget(QTreeWidget):
     def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], opt_edit: OptionsTreeWidget):
         super().__init__()
         self.file_state = file_state
