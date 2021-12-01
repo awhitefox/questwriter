@@ -44,3 +44,11 @@ def generate_new_option() -> Option:
     o.text = 'Новая опция'
     o.goto = GotoDestination()
     return o
+
+
+def generate_new_variable_definition(initial_value) -> VariableDefinition:
+    v = VariableDefinition()
+    v.id = str(uuid4())
+    v.name = 'Новая переменная'
+    v.initial_value = initial_value
+    return v

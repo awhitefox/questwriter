@@ -1,10 +1,10 @@
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter, QFrame
 
 from model import ChapterFileWrapper
 from view import FileState, FileStateContainer
-from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, OperationTreeWidget
+from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, OperationTreeWidget, VariableTreeWidget
 
 
 class MainWindow(QMainWindow):
@@ -20,6 +20,9 @@ class MainWindow(QMainWindow):
         self.segment_text_edit = SegmentTextEdit(self.file_state, self.chapter_tree)
         self.options_tree = OptionsTreeWidget(self.file_state, self.file.data, self.chapter_tree)
 
+        self.variable_tree_widget = VariableTreeWidget(self.file_state, self.file.data.variables)
+        self.operation_tree_widget = OperationTreeWidget(self.file_state, self.file.data.variables, self.options_tree)
+
         self.setCentralWidget(self._generate_main_widget())
 
         # Signals
@@ -31,16 +34,18 @@ class MainWindow(QMainWindow):
 
         # Misc
         self.setFont(QFont('Open Sans', 10))
-        self.resize(1200, 800)
+        self.resize(1400, 800)
         self.on_file_state_changed(self.file_state.value)
 
     def _generate_main_widget(self) -> QWidget:
         splitter = QSplitter()
         splitter.addWidget(self._generate_left_side())
         splitter.setCollapsible(0, False)
-        splitter.addWidget(self._generate_right_side())
+        splitter.addWidget(self._generate_middle_side())
         splitter.setCollapsible(1, False)
-        splitter.setSizes([300, 900])
+        splitter.addWidget(self._generate_right_side())
+        splitter.setCollapsible(2, False)
+        splitter.setSizes([350, 700, 350])
         return splitter
 
     def _generate_left_side(self) -> QWidget:
@@ -52,27 +57,35 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
         return widget
 
-    def _generate_right_side(self) -> QWidget:
+    def _generate_middle_side(self) -> QWidget:
         splitter = QSplitter()
         splitter.setOrientation(QtCore.Qt.Vertical)
-        splitter.setContentsMargins(0, 10, 10, 10)
+        splitter.setContentsMargins(0, 10, 0, 10)
         splitter.addWidget(self.segment_text_edit)
         splitter.setCollapsible(0, False)
         splitter.addWidget(self.options_tree)
         splitter.setCollapsible(1, False)
-        splitter.addWidget(self._generate_right_bottom_side())
+        splitter.addWidget(self._generate_middle_bottom_side())
         splitter.setCollapsible(2, False)
         splitter.setSizes([400, 200, 200])
         return splitter
 
-    def _generate_right_bottom_side(self) -> QWidget:
+    def _generate_middle_bottom_side(self) -> QWidget:
         splitter = QSplitter()
-        splitter.addWidget(OperationTreeWidget(self.file_state, self.file.data.variables, self.options_tree))
+        splitter.addWidget(self.operation_tree_widget)
         splitter.setCollapsible(0, False)
         splitter.addWidget(QWidget())
         splitter.setCollapsible(1, False)
         splitter.setSizes([450, 450])
         return splitter
+
+    def _generate_right_side(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout()
+        layout.addWidget(self.variable_tree_widget)
+        layout.setContentsMargins(0, 10, 10, 10)
+        widget.setLayout(layout)
+        return widget
 
     def _save_file(self):
         self.file.save_changes()
