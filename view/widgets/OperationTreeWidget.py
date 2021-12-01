@@ -40,8 +40,8 @@ class OperationTreeWidget(QTreeWidget):
         else:
             self.setEnabled(False)
 
-    def _generate_item(self, operation: VariableOperation) -> 'VariableTreeWidgetItemBase':
-        return VariableTreeWidgetItemBase(self.file_state, self.variables, operation)
+    def _generate_item(self, operation: VariableOperation) -> 'OperationTreeWidgetItemBase':
+        return OperationTreeWidgetItemBase(self.file_state, self.variables, operation)
 
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
@@ -93,7 +93,7 @@ class OperationTreeWidget(QTreeWidget):
             self.setEnabled(False)
 
 
-class VariableTreeWidgetItemBase(QTreeWidgetItem):
+class OperationTreeWidgetItemBase(QTreeWidgetItem):
     def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], o: VariableOperation):
         super().__init__()
         self.file_state = file_state
@@ -125,7 +125,7 @@ class VariableTreeWidgetItemBase(QTreeWidgetItem):
         self.file_state.set_dirty()
 
 
-class BoolTreeWidgetItem(VariableTreeWidgetItemBase):
+class BoolTreeWidgetItem(OperationTreeWidgetItemBase):
     def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], o: VariableOperation):
         super().__init__(file_state, variables, o)
 
@@ -139,7 +139,7 @@ class BoolTreeWidgetItem(VariableTreeWidgetItemBase):
         self.file_state.set_dirty()
 
 
-class FloatTreeWidgetItem(VariableTreeWidgetItemBase):
+class FloatTreeWidgetItem(OperationTreeWidgetItemBase):
     def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], o: VariableOperation):
         super().__init__(file_state, variables, o)
 
