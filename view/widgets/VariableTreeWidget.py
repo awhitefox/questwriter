@@ -17,8 +17,8 @@ class VariableTreeWidget(QTreeWidget):
         self.variables = variables
 
         self.setColumnCount(2)
+        self.setHeaderLabels(['Имя переменной', 'Стартовое значение'])
         self.header().setSectionResizeMode(QHeaderView.Stretch)
-        self.setHeaderHidden(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
 
