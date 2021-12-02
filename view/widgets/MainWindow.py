@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSpl
 
 from model import ChapterFileWrapper
 from view import FileState, FileStateContainer
-from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, OperationTreeWidget, VariableTreeWidget
+from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, OperationTreeWidget, ConditionTreeWidget, VariableTreeWidget
 
 
 class MainWindow(QMainWindow):
@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
 
         self.variable_tree_widget = VariableTreeWidget(self.file_state, self.file.data.variables)
         self.operation_tree_widget = OperationTreeWidget(self.file_state, self.file.data.variables, self.options_tree)
+        self.condition_tree_widget = ConditionTreeWidget(self.file_state, self.file.data.variables, self.options_tree)
 
         self.setCentralWidget(self._generate_main_widget())
 
@@ -74,7 +75,7 @@ class MainWindow(QMainWindow):
         splitter = QSplitter()
         splitter.addWidget(self.operation_tree_widget)
         splitter.setCollapsible(0, False)
-        splitter.addWidget(QWidget())
+        splitter.addWidget(self.condition_tree_widget)
         splitter.setCollapsible(1, False)
         splitter.setSizes([450, 450])
         return splitter
