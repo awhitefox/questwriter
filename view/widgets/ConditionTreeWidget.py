@@ -150,8 +150,8 @@ class ConditionTreeWidgetItemBase(QTreeWidgetItem):
         self.condition.left = self.variables[index].id
         self.file_state.set_dirty()
 
-    def on_type_combo_box_index_changed(self, index: int) -> None:
-        self.condition.comparison = ComparisonType(index)
+    def on_type_combo_box_index_changed(self, _: int) -> None:
+        self.condition.comparison = ComparisonType(self.type_combo_box.currentText())
         self.file_state.set_dirty()
 
 

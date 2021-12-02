@@ -44,6 +44,7 @@ def generate_new_option() -> Option:
     o.text = 'Новая опция'
     o.goto = GotoDestination()
     o.operations = None
+    o.conditions = None
     return o
 
 
