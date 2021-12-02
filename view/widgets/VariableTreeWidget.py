@@ -22,6 +22,8 @@ class VariableTreeWidget(QTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
 
+        self.itemChanged.connect(self._on_self_item_changed)
+
         self._generate_items()
 
     def _generate_items(self) -> None:
@@ -84,6 +86,11 @@ class VariableTreeWidget(QTreeWidget):
             del self.variables[selected_i]
             self.file_state.set_dirty()
             self.takeTopLevelItem(selected_i)
+
+    def _on_self_item_changed(self, item: QTreeWidgetItem, column: int) -> None:
+        if column == 0:
+            self.variables[self.indexOfTopLevelItem(item)].name = item.text(column)
+            self.file_state.set_dirty()
 
 
 class VariableTreeWidgetItemBase(QTreeWidgetItem):
