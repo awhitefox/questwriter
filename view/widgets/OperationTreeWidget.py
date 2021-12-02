@@ -71,10 +71,12 @@ class OperationTreeWidget(QTreeWidget):
         if not ok:
             return
 
+        var = find(self.variables, lambda x: x.name == s)
+
         new = VariableOperation()
-        new.variable_id = find(self.variables, lambda x: x.name == s).id
+        new.variable_id = var.id
         new.type = OperationType.Set
-        new.value = self.variables[0].initial_value
+        new.value = var.initial_value
 
         if self.option.operations is None:
             self.option.operations = []
