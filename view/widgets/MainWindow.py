@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
         splitter.setCollapsible(1, False)
         splitter.addWidget(self._generate_right_side())
         splitter.setCollapsible(2, False)
-        splitter.setSizes([350, 700, 350])
+        splitter.setSizes([300, 800, 300])
         return splitter
 
     def _generate_left_side(self) -> QWidget:
