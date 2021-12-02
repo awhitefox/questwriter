@@ -16,8 +16,6 @@ class OperationTreeWidget(QTreeWidget):
         self.file_state = file_state
         self.variables = variables
         self.option = None
-        self.branch_i = None
-        self.segment_i = None
 
         self.setColumnCount(3)
         self.header().setSectionResizeMode(QHeaderView.Stretch)
