@@ -1,6 +1,6 @@
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter, QMessageBox
 
 from model import ChapterFileWrapper
 from view import FileState, FileStateContainer
@@ -103,5 +103,13 @@ class MainWindow(QMainWindow):
             self._save_file()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        if self.file_state.value == FileState.DIRTY:
+            title = 'Выход'
+            msg = 'Остались несохраненные изменения, вы действительно хотите выйти?'
+            reply = QMessageBox.question(self, title, msg, QMessageBox.Yes, QMessageBox.No)
+            if reply != QMessageBox.Yes:
+                event.ignore()
+                return
+
         self.file.close()
         event.accept()
