@@ -127,6 +127,7 @@ class FloatTreeWidgetItem(VariableTreeWidgetItemBase):
 
         self.value_widget = QDoubleSpinBox()
         self.value_widget.setValue(variable.initial_value)
+        self.value_widget.setRange(-float('inf'), float('inf'))
 
         self.value_widget.valueChanged.connect(self.on_spin_box_value_changed)
 
