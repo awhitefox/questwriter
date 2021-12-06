@@ -29,7 +29,7 @@ def default_option(goto_branch_id: str, goto_segment_id: str) -> Option:
     return Option('Новая опция', goto)
 
 
-def default_variable_definition(initial_value) -> VariableDefinition:
+def default_variable_definition(initial_value: T_VariableValue) -> VariableDefinition:
     return VariableDefinition('Новая переменная', initial_value)
 
 
