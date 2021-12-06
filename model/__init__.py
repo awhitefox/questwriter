@@ -1,2 +1,2 @@
 from .chapter_file_wrapper import ChapterFileWrapper
-from .generation import generate_new_option, generate_new_segment, generate_new_branch
+from .defaults import default_option, default_segment, default_branch

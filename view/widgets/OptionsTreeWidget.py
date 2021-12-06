@@ -1,9 +1,12 @@
+from typing import Optional
+
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint, pyqtSignal
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox
 
-from model import generate_new_option
 from questlib import Chapter, Option
+
+from model import default_option
 from utils import find_index
 from view import FileStateContainer
 from view.widgets import ChapterTreeWidget, widget_utils
@@ -32,8 +35,10 @@ class OptionsTreeWidget(QTreeWidget):
 
         self.setEnabled(False)
 
-    def get_current_option(self) -> Option:
-        return self.options[self.indexOfTopLevelItem(self.currentItem())]
+    def get_current_option(self) -> Optional[Option]:
+        if self.options:
+            return self.options[self.indexOfTopLevelItem(self.currentItem())]
+        return None
 
     def _generate_items(self) -> None:
         self.clear()
@@ -63,10 +68,9 @@ class OptionsTreeWidget(QTreeWidget):
     def _add_option(self) -> None:
         selected_i = self.indexOfTopLevelItem(self.currentItem())
 
-        new = generate_new_option()
-        goto = new.goto
-        goto.branch_id = self.chapter.branches[0].id
-        goto.segment_id = self.chapter.branches[0].segments[0].id
+        branch = self.chapter.branches[0]
+        new = default_option(branch.id, branch.segments[0].id)
+
         self.options.insert(selected_i + 1, new)
         self.file_state.set_dirty()
 

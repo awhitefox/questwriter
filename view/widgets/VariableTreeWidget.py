@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QM
 
 from questlib import VariableDefinition
 
-from model.generation import generate_new_variable_definition
+from model.defaults import default_variable_definition
 from view import FileStateContainer
 
 
@@ -70,9 +70,9 @@ class VariableTreeWidget(QTreeWidget):
         s, ok = QInputDialog.getItem(self, title, msg, options, 0, False)
         if ok:
             if s == options[0]:
-                return generate_new_variable_definition(False)
+                return default_variable_definition(False)
             if s == options[1]:
-                return generate_new_variable_definition(0.0)
+                return default_variable_definition(0.0)
         return None
 
     def _delete_variable(self) -> None:

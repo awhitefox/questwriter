@@ -1,6 +1,6 @@
 import os
 
-from model.generation import generate_new_chapter
+from model.defaults import default_chapter
 from questlib import Chapter
 
 
@@ -14,7 +14,7 @@ class ChapterFileWrapper:
         if os.path.getsize(self._path) > 0:
             self._data = Chapter.from_json(self._file.read())
         else:
-            self._data = generate_new_chapter()
+            self._data = default_chapter()
             self.save_changes()
 
     @property

@@ -4,7 +4,9 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
 
-from questlib import Option, VariableDefinition, Condition, ComparisonType, CompareTo
+from questlib import Option, VariableDefinition, Condition, ComparisonType
+
+from model.defaults import default_condition
 from utils import find_index, find
 from view import FileStateContainer
 from view.widgets import OptionsTreeWidget
@@ -69,19 +71,8 @@ class ConditionTreeWidget(QTreeWidget):
         if not ok:
             return
 
-        var = find(self.variables, lambda x: x.name == s)
-
-        new = Condition()
-        new.left = var.id
-        new.comparison = ComparisonType.Equal
-
-        # TODO make changeable
-        new.compare_to = CompareTo.Constant
-
-        new.right = var.initial_value
-
-        if self.option.conditions is None:
-            self.option.conditions = []
+        # TODO make CompareTo changeable
+        new = default_condition(find(self.variables, lambda x: x.name == s))
 
         self.option.conditions.insert(selected_i + 1, new)
         self.file_state.set_dirty()
@@ -98,10 +89,7 @@ class ConditionTreeWidget(QTreeWidget):
         msg = 'Удалить условие?'
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
-            if len(self.option.conditions) > 1:
-                del self.option.conditions[selected_i]
-            else:
-                self.option.conditions = None
+            del self.option.conditions[selected_i]
             self.file_state.set_dirty()
             self.takeTopLevelItem(selected_i)
 

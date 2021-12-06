@@ -5,6 +5,8 @@ from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
 
 from questlib import Option, VariableDefinition, VariableOperation, OperationType
+
+from model.defaults import default_variable_operation
 from utils import find_index, find
 from view import FileStateContainer
 from view.widgets import OptionsTreeWidget
@@ -69,15 +71,7 @@ class OperationTreeWidget(QTreeWidget):
         if not ok:
             return
 
-        var = find(self.variables, lambda x: x.name == s)
-
-        new = VariableOperation()
-        new.variable_id = var.id
-        new.type = OperationType.Set
-        new.value = var.initial_value
-
-        if self.option.operations is None:
-            self.option.operations = []
+        new = default_variable_operation(find(self.variables, lambda x: x.name == s))
 
         self.option.operations.insert(selected_i + 1, new)
         self.file_state.set_dirty()
@@ -94,10 +88,7 @@ class OperationTreeWidget(QTreeWidget):
         msg = 'Удалить последствие?'
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
-            if len(self.option.operations) > 1:
-                del self.option.operations[selected_i]
-            else:
-                self.option.operations = None
+            del self.option.operations[selected_i]
             self.file_state.set_dirty()
             self.takeTopLevelItem(selected_i)
 
