@@ -100,6 +100,7 @@ class ConditionTreeWidget(QTreeWidget):
             self.setEnabled(True)
         else:
             self.option = None
+            self.clear()
             self.setEnabled(False)
 
 
