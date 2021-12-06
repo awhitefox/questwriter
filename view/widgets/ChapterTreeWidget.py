@@ -5,8 +5,10 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QMessageBox
 
-from model import generate_new_branch, generate_new_segment
+from model import default_branch, default_segment
 from questlib import Chapter, Branch, Segment
+
+from model.defaults import default_ending
 from view import FileStateContainer
 from view.widgets import widget_utils
 
@@ -99,10 +101,8 @@ class ChapterTreeWidget(QTreeWidget):
             if target == br_count:
                 target -= 1
 
-        new = generate_new_branch()
-        goto = new.segments[0].options[0].goto
-        goto.branch_id = self.chapter.branches[0].id
-        goto.segment_id = self.chapter.branches[0].segments[0].id
+        new = default_branch()
+
         self.chapter.branches.insert(target, new)
         self.file_state.set_dirty()
 
@@ -119,15 +119,13 @@ class ChapterTreeWidget(QTreeWidget):
         else:
             return
 
-        new = generate_new_segment()
-        if self.chapter.branches[indexes[0]].id != '@endings':
-            goto = new.options[0].goto
-            goto.branch_id = self.chapter.branches[0].id
-            goto.segment_id = self.chapter.branches[0].segments[0].id
+        branch = self.chapter.branches[indexes[0]]
+        if branch.id != '@endings':
+            new = default_segment(branch.id)
         else:
-            new.text = 'Новая концовка'
-            del new.options
-        self.chapter.branches[indexes[0]].segments.insert(target, new)
+            new = default_ending()
+
+        branch.segments.insert(target, new)
         self.file_state.set_dirty()
 
         new_item = self._generate_segment_item(new)
