@@ -1,6 +1,7 @@
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter, QMessageBox, QDockWidget, QSizePolicy, QTextEdit, QFrame
+from PyQt5.QtCore import Qt
 
 from model import ChapterFileWrapper
 from view import FileState, FileStateContainer
@@ -24,7 +25,14 @@ class MainWindow(QMainWindow):
         self.operation_tree_widget = OperationTreeWidget(self.file_state, self.file.data.variables, self.options_tree)
         self.condition_tree_widget = ConditionTreeWidget(self.file_state, self.file.data.variables, self.options_tree)
 
-        self.setCentralWidget(self._generate_main_widget())
+        # Docks and central widget
+
+        self._set_dock_corners()
+        self._create_left_dock_widget()
+        self._create_right_dock_widget()
+        self._create_bottom_dock_widget()
+
+        self.setCentralWidget(self.segment_text_edit)
 
         # Signals
 
@@ -35,40 +43,43 @@ class MainWindow(QMainWindow):
 
         # Misc
         self.setFont(QFont('Open Sans', 10))
+        self.setContentsMargins(5, 5, 5, 5)
         self.resize(1400, 800)
         self.on_file_state_changed(self.file_state.value)
 
-    def _generate_main_widget(self) -> QWidget:
-        splitter = QSplitter()
-        splitter.addWidget(self._generate_left_side())
-        splitter.setCollapsible(0, False)
-        splitter.addWidget(self._generate_middle_side())
-        splitter.setCollapsible(1, False)
-        splitter.addWidget(self._generate_right_side())
-        splitter.setCollapsible(2, False)
-        splitter.setSizes([300, 800, 300])
-        return splitter
+    def _set_dock_corners(self) -> None:
+        self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
+        self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
+        self.setCorner(Qt.TopRightCorner, Qt.RightDockWidgetArea)
+        self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea)
 
-    def _generate_left_side(self) -> QWidget:
+    def _create_left_dock_widget(self) -> None:
         widget = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.chapter_tree)
         layout.addWidget(self.save_button)
-        layout.setContentsMargins(10, 10, 0, 10)
+        layout.setContentsMargins(0, 0, 0, 0)
         widget.setLayout(layout)
-        return widget
+
+        dock = self._create_dock_widget('Древо истории', widget)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+
+    def _create_right_dock_widget(self) -> None:
+        dock = self._create_dock_widget('Переменные истории', self.variable_tree_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
+    def _create_bottom_dock_widget(self) -> None:
+        dock = self._create_dock_widget('Опции', self._generate_middle_side())
+        self.addDockWidget(Qt.BottomDockWidgetArea, dock)
 
     def _generate_middle_side(self) -> QWidget:
         splitter = QSplitter()
         splitter.setOrientation(QtCore.Qt.Vertical)
-        splitter.setContentsMargins(0, 10, 0, 10)
-        splitter.addWidget(self.segment_text_edit)
-        splitter.setCollapsible(0, False)
         splitter.addWidget(self.options_tree)
-        splitter.setCollapsible(1, False)
+        splitter.setCollapsible(0, False)
         splitter.addWidget(self._generate_middle_bottom_side())
-        splitter.setCollapsible(2, False)
-        splitter.setSizes([400, 200, 200])
+        splitter.setCollapsible(1, False)
+        splitter.setSizes([200, 200])
         return splitter
 
     def _generate_middle_bottom_side(self) -> QWidget:
@@ -80,13 +91,12 @@ class MainWindow(QMainWindow):
         splitter.setSizes([450, 450])
         return splitter
 
-    def _generate_right_side(self) -> QWidget:
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.variable_tree_widget)
-        layout.setContentsMargins(0, 10, 10, 10)
-        widget.setLayout(layout)
-        return widget
+    def _create_dock_widget(self, title: str, widget: QWidget) -> QDockWidget:
+        dock = QDockWidget(title, self)
+        dock.setWidget(widget)
+        dock.setFloating(False)
+        dock.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
+        return dock
 
     def _save_file(self):
         self.file.save_changes()
