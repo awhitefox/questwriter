@@ -1,6 +1,6 @@
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter, QMessageBox, QDockWidget, QSizePolicy, QTextEdit, QFrame
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter, QMessageBox, QDockWidget
 from PyQt5.QtCore import Qt
 
 from model import ChapterFileWrapper

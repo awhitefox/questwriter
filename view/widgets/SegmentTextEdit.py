@@ -1,6 +1,6 @@
 from typing import Union
 
-from PyQt5.QtWidgets import QTextEdit, QPlainTextEdit
+from PyQt5.QtWidgets import QPlainTextEdit
 
 from questlib import Chapter, Branch, Segment
 from view import FileStateContainer
