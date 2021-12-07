@@ -109,7 +109,7 @@ class OptionsTreeWidget(QTreeWidget):
         indexes = widget_utils.tree_widget_item_indexes(current)
         if len(indexes) == 2:  # segment
             br = self.chapter.branches[indexes[0]]
-            if br.id != '@endings':
+            if not br.is_endings_branch:
                 self.options = br.segments[indexes[1]].options
                 self.branch_i = indexes[0]
                 self.segment_i = indexes[1]

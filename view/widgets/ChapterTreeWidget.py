@@ -75,7 +75,7 @@ class ChapterTreeWidget(QTreeWidget):
         menu = QMenu()
         menu.addAction('Добавить ветвь', self._add_branch)
         if len(indexes) != 0:
-            if self.chapter.branches[indexes[0]].id != '@endings':
+            if not self.chapter.branches[indexes[0]].is_endings_branch:
                 menu.addAction('Добавить сегмент', self._add_segment)
             else:
                 menu.addAction('Добавить концовку', self._add_segment)
@@ -120,7 +120,7 @@ class ChapterTreeWidget(QTreeWidget):
             return
 
         branch = self.chapter.branches[indexes[0]]
-        if branch.id != '@endings':
+        if not branch.is_endings_branch:
             new = default_segment(branch.id)
         else:
             new = default_ending()
