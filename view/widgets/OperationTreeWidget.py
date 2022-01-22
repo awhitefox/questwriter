@@ -47,6 +47,16 @@ class OperationTreeWidget(QTreeWidget):
 
         menu.addSeparator()
 
+        index = self.indexOfTopLevelItem(self.currentItem())
+        menu.addAction('Вверх', lambda: self._move_operation(-1))
+        if index == 0:
+            menu.actions()[-1].setEnabled(False)
+        menu.addAction('Вниз', lambda: self._move_operation(1))
+        if index + 1 == len(self.option.operations):
+            menu.actions()[-1].setEnabled(False)
+
+        menu.addSeparator()
+
         menu.addAction('Удалить', self._delete_operation)
         menu.actions()[-1].setEnabled(bool(self.option.operations))
 
@@ -61,6 +71,20 @@ class OperationTreeWidget(QTreeWidget):
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
         new_item.init_widgets(self)
+
+    def _move_operation(self, delta: int) -> None:
+        index = self.indexOfTopLevelItem(self.currentItem())
+
+        operation = self.option.operations.pop(index)
+        self.option.operations.insert(index + delta, operation)
+
+        self.takeTopLevelItem(index)
+        operation_item = self._generate_item(operation)
+        self.insertTopLevelItem(index + delta, operation_item)
+        operation_item.init_widgets(self)
+
+        self.setCurrentItem(operation_item)
+        FileState.set_dirty()
 
     def _delete_operation(self) -> None:
         title = 'Удалить'
