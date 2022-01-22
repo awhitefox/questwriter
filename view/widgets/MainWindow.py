@@ -105,10 +105,20 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if FileState.is_dirty:
-            title = 'Выход'
-            msg = 'Остались несохраненные изменения, вы действительно хотите выйти?'
-            reply = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if reply != QMessageBox.Yes:
+            message_box = QMessageBox(QMessageBox.Warning,
+                                      'Выход',
+                                      'Файл имеет несохраненные изменения, выберите действие.')
+            save_b = message_box.addButton('Сохранить', QMessageBox.AcceptRole)
+            dont_save_b = message_box.addButton('Не сохранять', QMessageBox.DestructiveRole)
+            message_box.addButton('Отмена', QMessageBox.RejectRole)
+            message_box.setDefaultButton(save_b)
+            message_box.exec()
+
+            if message_box.clickedButton() == save_b:
+                self.file.save_changes()
+            elif message_box.clickedButton() == dont_save_b:
+                pass
+            else:
                 event.ignore()
                 return
 
