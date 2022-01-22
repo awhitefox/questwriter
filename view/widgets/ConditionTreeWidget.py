@@ -1,9 +1,9 @@
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
-from questlib import Option, VariableDefinition, Condition, ComparisonType
+from questlib import Option, VariableDefinition, Condition, ComparisonType, CompareTo
 
 from model.defaults import default_condition
 from utils import find_index, find
@@ -36,12 +36,8 @@ class ConditionTreeWidget(QTreeWidget):
         else:
             self.setEnabled(False)
 
-    def _generate_item(self, condition: Condition) -> 'ConditionTreeWidgetItemBase':
-        t = find(self.variables, lambda x: x.id == condition.left).type
-        if t is bool:
-            return BoolTreeWidgetItem(self.variables, condition)
-        if t is float:
-            return FloatTreeWidgetItem(self.variables, condition)
+    def _generate_item(self, condition: Condition) -> 'ConditionTreeWidgetItem':
+        return ConditionTreeWidgetItem(self.variables, condition)
 
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
@@ -58,18 +54,7 @@ class ConditionTreeWidget(QTreeWidget):
 
     def _add_condition(self) -> None:
         selected_i = self.indexOfTopLevelItem(self.currentItem())
-
-        # FIXME temporary fix for value editor not changing when type of variable is changed
-        title = '?'
-        msg = 'Выберите переменную'
-        options = list(map(lambda x: x.name, self.variables))
-        s, ok = QInputDialog.getItem(self, title, msg, options, 0, False)
-        if not ok:
-            return
-
-        # TODO make CompareTo changeable
-        new = default_condition(find(self.variables, lambda x: x.name == s))
-
+        new = default_condition(self.variables[0])
         self.option.conditions.insert(selected_i + 1, new)
         FileState.set_dirty()
 
@@ -100,86 +85,86 @@ class ConditionTreeWidget(QTreeWidget):
             self.setEnabled(False)
 
 
-class ConditionTreeWidgetItemBase(QTreeWidgetItem):
+class ConditionTreeWidgetItem(QTreeWidgetItem):
     def __init__(self, variables: List[VariableDefinition], c: Condition):
         super().__init__()
         self.variables = variables
         self.condition = c
+        self._tree = None
 
         current_index = find_index(variables, lambda x: x.id == c.left)
+        self.variable_type = self.variables[current_index].type
 
         self.variable_combo_box = QComboBox()
         self.variable_combo_box.view().setTextElideMode(QtCore.Qt.ElideRight)
-        self.variable_combo_box.addItems(map(lambda x: x.name, variables))
-        self.variable_combo_box.setCurrentIndex(current_index)
-
-        # FIXME temporary fix for value editor not changing when type of variable is changed
-        self.variable_combo_box.setEnabled(False)
-
         self.type_combo_box = QComboBox()
-        self.type_combo_box.addItems((i.value for i in ComparisonType if i.is_available_for(variables[current_index].type)))
-        self.type_combo_box.setCurrentIndex(list(ComparisonType).index(c.comparison))
-
         self.value_widget = None
 
-        self.variable_combo_box.currentIndexChanged.connect(self.on_variable_combo_box_index_changed)
-        self.type_combo_box.currentIndexChanged.connect(self.on_type_combo_box_index_changed)
+        self.variable_combo_box.addItems(map(lambda x: x.name, self.variables))
+        self.variable_combo_box.setCurrentIndex(current_index)
+
+        self._set_variable_type(self.variables[current_index].type)
+
+        self.variable_combo_box.currentIndexChanged.connect(self.on_variable_change)
+        self.type_combo_box.currentIndexChanged.connect(self.on_type_change)
 
     def init_widgets(self, tree_widget: QTreeWidget) -> None:
+        self._tree = tree_widget
         tree_widget.setItemWidget(self, 0, self.variable_combo_box)
         tree_widget.setItemWidget(self, 1, self.type_combo_box)
         tree_widget.setItemWidget(self, 2, self.value_widget)
 
-    def on_variable_combo_box_index_changed(self, index: int) -> None:
-        self.condition.left = self.variables[index].id
+    def _set_variable_type(self, var_type: Type) -> None:
+        if self.condition.compare_to == CompareTo.Variable:
+            raise AttributeError('Comparison to variables is not supported yet')  # TODO
+
+        if self.value_widget is not None:
+            self.value_widget.disconnect()
+
+        b = self.type_combo_box.blockSignals(True)
+        self.type_combo_box.clear()
+        self.type_combo_box.addItems((i.value for i in ComparisonType if i.is_available_for(var_type)))
+        self.type_combo_box.blockSignals(b)
+
+        if not self.condition.comparison.is_available_for(var_type):
+            self.condition.comparison = ComparisonType.Equal
+        self.type_combo_box.setCurrentIndex(list(ComparisonType).index(self.condition.comparison))
+
+        if var_type is bool:
+            if type(self.condition.right) is not var_type:
+                self.condition.right = False
+
+            self.value_widget = QCheckBox()
+            self.value_widget.setCheckState(2 if self.condition.right else 0)  # use 2 to avoid tristate
+            self.value_widget.stateChanged.connect(self.on_value_change)
+        elif var_type is float:
+            if type(self.condition.right) is not var_type:
+                self.condition.right = 0.0
+
+            self.value_widget = QDoubleSpinBox()
+            self.value_widget.setValue(self.condition.right)
+            self.value_widget.setRange(-float('inf'), float('inf'))
+            self.value_widget.valueChanged.connect(self.on_value_change)
+        else:
+            raise ValueError(f'Variable type {var_type} not supported')
+
+        if self._tree is not None:
+            self._tree.setItemWidget(self, 2, self.value_widget)
+
+    def on_variable_change(self, index: int) -> None:
+        new = self.variables[index]
+        if type(self.condition.right) is not new.type:
+            self._set_variable_type(new.type)
+        self.condition.left = new.id
         FileState.set_dirty()
 
-    def on_type_combo_box_index_changed(self, _: int) -> None:
+    def on_type_change(self, *_) -> None:
         self.condition.comparison = ComparisonType(self.type_combo_box.currentText())
         FileState.set_dirty()
 
-
-class BoolTreeWidgetItem(ConditionTreeWidgetItemBase):
-    def __init__(self, variables: List[VariableDefinition], c: Condition):
-        super().__init__(variables, c)
-
-        self.value_widget = QCheckBox()
-        self.value_widget.setCheckState(2 if c.right else 0)
-
-        self.value_widget.stateChanged.connect(self.on_check_box_value_changed)
-
-    def on_check_box_value_changed(self, _: int) -> None:
-        self.condition.right = bool(self.value_widget.checkState())
-        FileState.set_dirty()
-
-
-class FloatTreeWidgetItem(ConditionTreeWidgetItemBase):
-    def __init__(self, variables: List[VariableDefinition], c: Condition):
-        super().__init__(variables, c)
-
-        self.value_widget = QDoubleSpinBox()
-        self.value_widget.setValue(c.right)
-        self.value_widget.setRange(-float('inf'), float('inf'))
-
-        self.value_widget.valueChanged.connect(self.on_spin_box_value_changed)
-
-    def on_spin_box_value_changed(self, _: int) -> None:
-        self.condition.right = self.value_widget.value()
-        FileState.set_dirty()
-
-
-class VariableTreeWidgetItem(ConditionTreeWidgetItemBase):
-    def __init__(self, variables: List[VariableDefinition], c: Condition):
-        super().__init__(variables, c)
-
-        current_index = find_index(variables, lambda x: x.id == c.right)
-
-        self.value_widget = QComboBox()
-        self.value_widget.addItems((i.name for i in variables if i.type is variables[current_index].type))
-        self.value_widget.setCurrentIndex(current_index)
-
-        self.value_widget.currentIndexChanged.connect(self.on_value_changed)
-
-    def on_value_changed(self, index: int) -> None:
-        self.condition.right = self.variables[index].id
+    def on_value_change(self, *_):
+        if isinstance(self.value_widget, QCheckBox):
+            self.condition.right = bool(self.value_widget.checkState())  # convert to bool to avoid tristate
+        elif isinstance(self.value_widget, QDoubleSpinBox):
+            self.condition.right = self.value_widget.value()
         FileState.set_dirty()
