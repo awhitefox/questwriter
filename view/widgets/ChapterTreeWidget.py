@@ -64,6 +64,16 @@ class ChapterTreeWidget(QTreeWidget):
                 menu.addAction('Добавить сегмент', self._add_segment)
             else:
                 menu.addAction('Добавить концовку', self._add_segment)
+
+            if len(indexes) == 2:
+                menu.addSeparator()
+                menu.addAction('Вверх', lambda: self._move_segment(-1))
+                if indexes[1] == 0:
+                    menu.actions()[-1].setEnabled(False)
+                menu.addAction('Вниз', lambda: self._move_segment(1))
+                if indexes[1] + 1 == len(self.chapter.branches[indexes[0]].segments):
+                    menu.actions()[-1].setEnabled(False)
+
             menu.addSeparator()
             if len(indexes) == 1:
                 menu.addAction('Удалить', self._delete_branch)
@@ -115,6 +125,21 @@ class ChapterTreeWidget(QTreeWidget):
 
         new_item = self._generate_segment_item(new)
         self.topLevelItem(0).child(indexes[0]).insertChild(target, new_item)
+
+    def _move_segment(self, delta: int) -> None:
+        indexes = widget_utils.tree_widget_item_indexes(self.currentItem())
+
+        branch = self.chapter.branches[indexes[0]]
+        segment = branch.segments.pop(indexes[1])
+        branch.segments.insert(indexes[1] + delta, segment)
+
+        branch_item = self.topLevelItem(0).child(indexes[0])
+        segment_item = branch_item.takeChild(indexes[1])
+        branch_item.insertChild(indexes[1] + delta, segment_item)
+
+        EditorState.current_segment = None
+        self.setCurrentItem(segment_item)
+        FileState.set_dirty()
 
     def _delete_branch(self) -> None:
         title = 'Удалить'
