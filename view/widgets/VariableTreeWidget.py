@@ -7,17 +7,17 @@ from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QM
 from questlib import VariableDefinition
 
 from model.defaults import default_variable_definition
-from view import FileStateContainer
+from view import FileState
 
 
 class VariableTreeWidget(QTreeWidget):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition]):
+    def __init__(self, variables: List[VariableDefinition]):
         super().__init__()
-        self.file_state = file_state
         self.variables = variables
 
+        self.setRootIsDecorated(False)
         self.setColumnCount(2)
-        self.setHeaderLabels(['Имя переменной', 'Стартовое значение'])
+        self.setHeaderLabels(['Имя переменной', 'Начальное значение'])
         self.header().setSectionResizeMode(QHeaderView.Stretch)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
@@ -33,11 +33,12 @@ class VariableTreeWidget(QTreeWidget):
             self.addTopLevelItem(item)
             item.init_widgets(self)
 
+    # noinspection PyMethodMayBeStatic
     def _generate_item(self, variable: VariableDefinition) -> 'VariableTreeWidgetItemBase':
         if variable.type is bool:
-            return BoolTreeWidgetItem(self.file_state, variable)
+            return BoolTreeWidgetItem(variable)
         if variable.type is float:
-            return FloatTreeWidgetItem(self.file_state, variable)
+            return FloatTreeWidgetItem(variable)
 
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
@@ -57,7 +58,7 @@ class VariableTreeWidget(QTreeWidget):
             return
 
         self.variables.insert(selected_i + 1, new)
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
@@ -84,19 +85,18 @@ class VariableTreeWidget(QTreeWidget):
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
             del self.variables[selected_i]
-            self.file_state.set_dirty()
+            FileState.set_dirty()
             self.takeTopLevelItem(selected_i)
 
     def _on_self_item_changed(self, item: QTreeWidgetItem, column: int) -> None:
         if column == 0:
             self.variables[self.indexOfTopLevelItem(item)].name = item.text(column)
-            self.file_state.set_dirty()
+            FileState.set_dirty()
 
 
 class VariableTreeWidgetItemBase(QTreeWidgetItem):
-    def __init__(self, file_state: FileStateContainer, variable: VariableDefinition):
+    def __init__(self, variable: VariableDefinition):
         super().__init__()
-        self.file_state = file_state
         self.variable = variable
         self.value_widget = None
 
@@ -108,22 +108,22 @@ class VariableTreeWidgetItemBase(QTreeWidgetItem):
 
 
 class BoolTreeWidgetItem(VariableTreeWidgetItemBase):
-    def __init__(self, file_state: FileStateContainer, variable: VariableDefinition):
-        super().__init__(file_state, variable)
+    def __init__(self, variable: VariableDefinition):
+        super().__init__(variable)
 
         self.value_widget = QCheckBox()
-        self.value_widget.setCheckState(variable.initial_value)
+        self.value_widget.setCheckState(2 if variable.initial_value else 0)
 
         self.value_widget.stateChanged.connect(self.on_check_box_value_changed)
 
     def on_check_box_value_changed(self, _: int) -> None:
         self.variable.initial_value = self.value_widget.checkState()
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
 
 class FloatTreeWidgetItem(VariableTreeWidgetItemBase):
-    def __init__(self, file_state: FileStateContainer, variable: VariableDefinition):
-        super().__init__(file_state, variable)
+    def __init__(self, variable: VariableDefinition):
+        super().__init__(variable)
 
         self.value_widget = QDoubleSpinBox()
         self.value_widget.setValue(variable.initial_value)
@@ -133,4 +133,4 @@ class FloatTreeWidgetItem(VariableTreeWidgetItemBase):
 
     def on_spin_box_value_changed(self, _: int) -> None:
         self.variable.initial_value = self.value_widget.value()
-        self.file_state.set_dirty()
+        FileState.set_dirty()

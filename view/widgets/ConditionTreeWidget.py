@@ -1,21 +1,18 @@
-from typing import List
+from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
-
 from questlib import Option, VariableDefinition, Condition, ComparisonType
 
 from model.defaults import default_condition
 from utils import find_index, find
-from view import FileStateContainer
-from view.widgets import OptionsTreeWidget
+from view import FileState, EditorState
 
 
 class ConditionTreeWidget(QTreeWidget):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], opt_edit: OptionsTreeWidget):
+    def __init__(self, variables: List[VariableDefinition]):
         super().__init__()
-        self.file_state = file_state
         self.variables = variables
         self.option = None
 
@@ -25,8 +22,7 @@ class ConditionTreeWidget(QTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
 
-        opt_edit.current_option_changed.connect(self.on_current_option_changed)
-
+        EditorState.current_option_changed.connect(self.on_current_option_changed)
         self.setEnabled(False)
 
     def _generate_items(self) -> None:
@@ -43,9 +39,9 @@ class ConditionTreeWidget(QTreeWidget):
     def _generate_item(self, condition: Condition) -> 'ConditionTreeWidgetItemBase':
         t = find(self.variables, lambda x: x.id == condition.left).type
         if t is bool:
-            return BoolTreeWidgetItem(self.file_state, self.variables, condition)
+            return BoolTreeWidgetItem(self.variables, condition)
         if t is float:
-            return FloatTreeWidgetItem(self.file_state, self.variables, condition)
+            return FloatTreeWidgetItem(self.variables, condition)
 
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
@@ -75,7 +71,7 @@ class ConditionTreeWidget(QTreeWidget):
         new = default_condition(find(self.variables, lambda x: x.name == s))
 
         self.option.conditions.insert(selected_i + 1, new)
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
@@ -90,10 +86,10 @@ class ConditionTreeWidget(QTreeWidget):
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
             del self.option.conditions[selected_i]
-            self.file_state.set_dirty()
+            FileState.set_dirty()
             self.takeTopLevelItem(selected_i)
 
-    def on_current_option_changed(self, o: Option) -> None:
+    def on_current_option_changed(self, o: Optional[Option]) -> None:
         if o is not None:
             self.option = o
             self._generate_items()
@@ -105,9 +101,8 @@ class ConditionTreeWidget(QTreeWidget):
 
 
 class ConditionTreeWidgetItemBase(QTreeWidgetItem):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], c: Condition):
+    def __init__(self, variables: List[VariableDefinition], c: Condition):
         super().__init__()
-        self.file_state = file_state
         self.variables = variables
         self.condition = c
 
@@ -137,30 +132,30 @@ class ConditionTreeWidgetItemBase(QTreeWidgetItem):
 
     def on_variable_combo_box_index_changed(self, index: int) -> None:
         self.condition.left = self.variables[index].id
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
     def on_type_combo_box_index_changed(self, _: int) -> None:
         self.condition.comparison = ComparisonType(self.type_combo_box.currentText())
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
 
 class BoolTreeWidgetItem(ConditionTreeWidgetItemBase):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], c: Condition):
-        super().__init__(file_state, variables, c)
+    def __init__(self, variables: List[VariableDefinition], c: Condition):
+        super().__init__(variables, c)
 
         self.value_widget = QCheckBox()
-        self.value_widget.setCheckState(c.right)
+        self.value_widget.setCheckState(2 if c.right else 0)
 
         self.value_widget.stateChanged.connect(self.on_check_box_value_changed)
 
     def on_check_box_value_changed(self, _: int) -> None:
         self.condition.right = bool(self.value_widget.checkState())
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
 
 class FloatTreeWidgetItem(ConditionTreeWidgetItemBase):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], c: Condition):
-        super().__init__(file_state, variables, c)
+    def __init__(self, variables: List[VariableDefinition], c: Condition):
+        super().__init__(variables, c)
 
         self.value_widget = QDoubleSpinBox()
         self.value_widget.setValue(c.right)
@@ -170,12 +165,12 @@ class FloatTreeWidgetItem(ConditionTreeWidgetItemBase):
 
     def on_spin_box_value_changed(self, _: int) -> None:
         self.condition.right = self.value_widget.value()
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
 
 class VariableTreeWidgetItem(ConditionTreeWidgetItemBase):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], c: Condition):
-        super().__init__(file_state, variables, c)
+    def __init__(self, variables: List[VariableDefinition], c: Condition):
+        super().__init__(variables, c)
 
         current_index = find_index(variables, lambda x: x.id == c.right)
 
@@ -187,4 +182,4 @@ class VariableTreeWidgetItem(ConditionTreeWidgetItemBase):
 
     def on_value_changed(self, index: int) -> None:
         self.condition.right = self.variables[index].id
-        self.file_state.set_dirty()
+        FileState.set_dirty()

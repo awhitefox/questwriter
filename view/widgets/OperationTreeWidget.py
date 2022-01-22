@@ -1,21 +1,18 @@
-from typing import List
+from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
-
 from questlib import Option, VariableDefinition, VariableOperation, OperationType
 
 from model.defaults import default_variable_operation
 from utils import find_index, find
-from view import FileStateContainer
-from view.widgets import OptionsTreeWidget
+from view import FileState, EditorState
 
 
 class OperationTreeWidget(QTreeWidget):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], opt_edit: OptionsTreeWidget):
+    def __init__(self, variables: List[VariableDefinition]):
         super().__init__()
-        self.file_state = file_state
         self.variables = variables
         self.option = None
 
@@ -25,8 +22,7 @@ class OperationTreeWidget(QTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
 
-        opt_edit.current_option_changed.connect(self.on_current_option_changed)
-
+        EditorState.current_option_changed.connect(self.on_current_option_changed)
         self.setEnabled(False)
 
     def _generate_items(self) -> None:
@@ -43,9 +39,9 @@ class OperationTreeWidget(QTreeWidget):
     def _generate_item(self, operation: VariableOperation) -> 'OperationTreeWidgetItemBase':
         t = find(self.variables, lambda x: x.id == operation.variable_id).type
         if t is bool:
-            return BoolTreeWidgetItem(self.file_state, self.variables, operation)
+            return BoolTreeWidgetItem(self.variables, operation)
         if t is float:
-            return FloatTreeWidgetItem(self.file_state, self.variables, operation)
+            return FloatTreeWidgetItem(self.variables, operation)
 
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
@@ -74,7 +70,7 @@ class OperationTreeWidget(QTreeWidget):
         new = default_variable_operation(find(self.variables, lambda x: x.name == s))
 
         self.option.operations.insert(selected_i + 1, new)
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
@@ -89,10 +85,10 @@ class OperationTreeWidget(QTreeWidget):
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
             del self.option.operations[selected_i]
-            self.file_state.set_dirty()
+            FileState.set_dirty()
             self.takeTopLevelItem(selected_i)
 
-    def on_current_option_changed(self, o: Option) -> None:
+    def on_current_option_changed(self, o: Optional[Option]) -> None:
         if o is not None:
             self.option = o
             self._generate_items()
@@ -104,9 +100,8 @@ class OperationTreeWidget(QTreeWidget):
 
 
 class OperationTreeWidgetItemBase(QTreeWidgetItem):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], o: VariableOperation):
+    def __init__(self, variables: List[VariableDefinition], o: VariableOperation):
         super().__init__()
-        self.file_state = file_state
         self.variables = variables
         self.operation = o
 
@@ -136,30 +131,30 @@ class OperationTreeWidgetItemBase(QTreeWidgetItem):
 
     def on_variable_combo_box_index_changed(self, index: int) -> None:
         self.operation.variable_id = self.variables[index].id
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
     def on_type_combo_box_index_changed(self, _: int) -> None:
         self.operation.type = OperationType(self.type_combo_box.currentText())
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
 
 class BoolTreeWidgetItem(OperationTreeWidgetItemBase):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], o: VariableOperation):
-        super().__init__(file_state, variables, o)
+    def __init__(self, variables: List[VariableDefinition], o: VariableOperation):
+        super().__init__(variables, o)
 
         self.value_widget = QCheckBox()
-        self.value_widget.setCheckState(o.value)
+        self.value_widget.setCheckState(2 if o.value else 0)
 
         self.value_widget.stateChanged.connect(self.on_check_box_value_changed)
 
     def on_check_box_value_changed(self, _: int) -> None:
         self.operation.value = bool(self.value_widget.checkState())
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
 
 class FloatTreeWidgetItem(OperationTreeWidgetItemBase):
-    def __init__(self, file_state: FileStateContainer, variables: List[VariableDefinition], o: VariableOperation):
-        super().__init__(file_state, variables, o)
+    def __init__(self, variables: List[VariableDefinition], o: VariableOperation):
+        super().__init__(variables, o)
 
         self.value_widget = QDoubleSpinBox()
         self.value_widget.setValue(o.value)
@@ -169,4 +164,4 @@ class FloatTreeWidgetItem(OperationTreeWidgetItemBase):
 
     def on_spin_box_value_changed(self, _: int) -> None:
         self.operation.value = self.value_widget.value()
-        self.file_state.set_dirty()
+        FileState.set_dirty()

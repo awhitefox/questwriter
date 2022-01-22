@@ -1,28 +1,27 @@
+from textwrap import shorten
 from typing import Optional
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import QPoint, pyqtSignal
+from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox
 
 from questlib import Chapter, Option
 
 from model import default_option
 from utils import find_index
-from view import FileStateContainer
+from view import FileState, EditorState
 from view.widgets import ChapterTreeWidget, widget_utils
 
 
 class OptionsTreeWidget(QTreeWidget):
-    current_option_changed = pyqtSignal(object)
-
-    def __init__(self, file_state: FileStateContainer, chapter: Chapter, tree: ChapterTreeWidget):
+    def __init__(self, chapter: Chapter, tree: ChapterTreeWidget):
         super().__init__()
-        self.file_state = file_state
         self.chapter = chapter
         self.options = None
         self.branch_i = None
         self.segment_i = None
 
+        self.setRootIsDecorated(False)
         self.setColumnCount(3)
         self.header().setSectionResizeMode(QHeaderView.Stretch)
         self.setHeaderHidden(True)
@@ -50,8 +49,7 @@ class OptionsTreeWidget(QTreeWidget):
                 item.init_widgets(self)
         else:
             self.setEnabled(False)
-            # noinspection PyUnresolvedReferences
-            self.current_option_changed.emit(None)
+        EditorState.current_option = None
 
     def _generate_item(self, option: Option) -> 'OptionsTreeWidgetItem':
         return OptionsTreeWidgetItem(self.chapter, option, self.branch_i, self.segment_i)
@@ -72,7 +70,7 @@ class OptionsTreeWidget(QTreeWidget):
         new = default_option(branch.id, branch.segments[0].id)
 
         self.options.insert(selected_i + 1, new)
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
@@ -88,7 +86,7 @@ class OptionsTreeWidget(QTreeWidget):
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
             del self.options[selected_i]
-            self.file_state.set_dirty()
+            FileState.set_dirty()
             self.takeTopLevelItem(selected_i)
 
     def on_item_changed(self, item: QTreeWidgetItem, _) -> None:
@@ -96,11 +94,10 @@ class OptionsTreeWidget(QTreeWidget):
         option.text = item.text(0)
         option.goto.branch_id = item.text(1)
         option.goto.segment_id = item.text(2)
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
     def on_current_item_changed(self, *_) -> None:
-        # noinspection PyUnresolvedReferences
-        self.current_option_changed.emit(self.get_current_option())
+        EditorState.current_option = self.get_current_option()
 
     def on_tree_current_item_changed(self, current: QTreeWidgetItem, _) -> None:
         self.options = None
@@ -151,7 +148,8 @@ class OptionsTreeWidgetItem(QTreeWidgetItem):
     def refresh_segment_options(self) -> None:
         self.segment_combo_box.clear()
         branch_index = self.branch_combo_box.currentIndex()
-        segment_texts = [s.text.replace('\n', ' ') for s in self.chapter.branches[branch_index].segments]
+        segments = self.chapter.branches[branch_index].segments
+        segment_texts = [shorten(s.text, width=80, placeholder='...').replace('\n', ' ') for s in segments]
         if branch_index == self.branch_i:
             segment_texts[self.segment_i] = '(этот сегмент)'
 

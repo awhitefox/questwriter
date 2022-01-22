@@ -1,32 +1,28 @@
-from enum import Enum
-
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
-class FileState(Enum):
-    CLEAN = 0
-    DIRTY = 1
+class _FileState(QObject):
+    state_changed = pyqtSignal(bool)
 
-
-class FileStateContainer(QObject):
-    state_changed = pyqtSignal(FileState)
-
-    def __init__(self, value: FileState = FileState.CLEAN):
+    def __init__(self):
         super().__init__()
-        self._value = value
+        self._is_dirty = False
 
     @property
-    def value(self) -> FileState:
-        return self._value
+    def is_dirty(self) -> bool:
+        return self._is_dirty
 
     def set_clean(self):
-        self._set_value(FileState.CLEAN)
+        self._set_dirty(False)
 
     def set_dirty(self):
-        self._set_value(FileState.DIRTY)
+        self._set_dirty(True)
 
-    def _set_value(self, value: FileState) -> None:
-        if self._value != value:
-            self._value = value
+    def _set_dirty(self, value: bool) -> None:
+        if self._is_dirty != value:
+            self._is_dirty = value
             # noinspection PyUnresolvedReferences
             self.state_changed.emit(value)
+
+
+FileState = _FileState()

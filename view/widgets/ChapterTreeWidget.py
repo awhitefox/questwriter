@@ -1,24 +1,19 @@
 import textwrap
-from typing import Union
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QPoint
+from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QMessageBox
-
-from model import default_branch, default_segment
 from questlib import Chapter, Branch, Segment
 
+from model import default_branch, default_segment
 from model.defaults import default_ending
-from view import FileStateContainer
+from view import FileState, EditorState
 from view.widgets import widget_utils
 
 
 class ChapterTreeWidget(QTreeWidget):
-    current_story_element_changed = pyqtSignal(object)
-
-    def __init__(self, file_state: FileStateContainer, chapter: Chapter):
+    def __init__(self, chapter: Chapter):
         super().__init__()
-        self.file_state = file_state
         self.chapter = chapter
 
         self.setColumnCount(1)
@@ -32,16 +27,6 @@ class ChapterTreeWidget(QTreeWidget):
         self.itemChanged.connect(self.on_item_changed)
 
         self.expandAll()
-
-    def get_current_story_element(self) -> Union[Chapter, Branch, Segment]:
-        indexes = widget_utils.tree_widget_item_indexes(self.currentItem())
-        depth = len(indexes)
-        if depth == 0:
-            return self.chapter
-        elif depth == 1:
-            return self.chapter.branches[indexes[0]]
-        elif depth == 2:
-            return self.chapter.branches[indexes[0]].segments[indexes[1]]
 
     def _generate_tree(self) -> None:
         self.clear()
@@ -104,7 +89,7 @@ class ChapterTreeWidget(QTreeWidget):
         new = default_branch()
 
         self.chapter.branches.insert(target, new)
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
         new_item = self._generate_branch_item(new)
         self.topLevelItem(0).insertChild(target, new_item)
@@ -126,7 +111,7 @@ class ChapterTreeWidget(QTreeWidget):
             new = default_ending()
 
         branch.segments.insert(target, new)
-        self.file_state.set_dirty()
+        FileState.set_dirty()
 
         new_item = self._generate_segment_item(new)
         self.topLevelItem(0).child(indexes[0]).insertChild(target, new_item)
@@ -142,7 +127,7 @@ class ChapterTreeWidget(QTreeWidget):
         if res == QMessageBox.Yes:
             del self.chapter.branches[indexes[0]]
             self._cleanup_options_after_branch_deletion(branch.id)
-            self.file_state.set_dirty()
+            FileState.set_dirty()
 
             item = self.topLevelItem(0).child(indexes[0])
             self.topLevelItem(0).removeChild(item)
@@ -158,7 +143,7 @@ class ChapterTreeWidget(QTreeWidget):
         if res == QMessageBox.Yes:
             del self.chapter.branches[indexes[0]].segments[indexes[1]]
             self._cleanup_options_after_segment_deletion(segment.id)
-            self.file_state.set_dirty()
+            FileState.set_dirty()
 
             item = self.topLevelItem(0).child(indexes[0]).child(indexes[1])
             self.topLevelItem(0).child(indexes[0]).removeChild(item)
@@ -195,14 +180,17 @@ class ChapterTreeWidget(QTreeWidget):
         self.currentItem().setText(0, text.replace('\n', ''))
 
     def on_current_item_changed(self, *_):
-        # noinspection PyUnresolvedReferences
-        self.current_story_element_changed.emit(self.get_current_story_element())
+        indexes = widget_utils.tree_widget_item_indexes(self.currentItem())
+        depth = len(indexes)
+
+        EditorState.current_branch = self.chapter.branches[indexes[0]] if depth > 0 else None
+        EditorState.current_segment = self.chapter.branches[indexes[0]].segments[indexes[1]] if depth > 1 else None
 
     def on_item_changed(self, item: QTreeWidgetItem, _) -> None:
         indexes = widget_utils.tree_widget_item_indexes(item)
         if len(indexes) == 0:  # chapter title
             self.chapter.title = item.text(0)
-            self.file_state.set_dirty()
+            FileState.set_dirty()
         elif len(indexes) == 1:  # branch title
             self.chapter.branches[indexes[0]].title = item.text(0)
-            self.file_state.set_dirty()
+            FileState.set_dirty()

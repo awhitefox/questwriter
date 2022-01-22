@@ -1,10 +1,10 @@
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QSplitter, QMessageBox, QDockWidget
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QMessageBox, QDockWidget, QApplication
 from PyQt5.QtCore import Qt
 
 from model import ChapterFileWrapper
-from view import FileState, FileStateContainer
+from view import FileState
 from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, OperationTreeWidget, ConditionTreeWidget, VariableTreeWidget
 
 
@@ -12,40 +12,47 @@ class MainWindow(QMainWindow):
     def __init__(self, file_path: str):
         super().__init__()
         self.file = ChapterFileWrapper(file_path)
-        self.file_state = FileStateContainer()
 
         # Widgets
 
-        self.chapter_tree = ChapterTreeWidget(self.file_state, self.file.data)
+        self.chapter_tree = ChapterTreeWidget(self.file.data)
         self.save_button = QPushButton('Сохранить')
-        self.segment_text_edit = SegmentTextEdit(self.file_state, self.chapter_tree)
-        self.options_tree = OptionsTreeWidget(self.file_state, self.file.data, self.chapter_tree)
+        self.segment_text_edit = SegmentTextEdit()
+        self.options_tree = OptionsTreeWidget(self.file.data, self.chapter_tree)
 
-        self.variable_tree_widget = VariableTreeWidget(self.file_state, self.file.data.variables)
-        self.operation_tree_widget = OperationTreeWidget(self.file_state, self.file.data.variables, self.options_tree)
-        self.condition_tree_widget = ConditionTreeWidget(self.file_state, self.file.data.variables, self.options_tree)
+        self.variable_tree_widget = VariableTreeWidget(self.file.data.variables)
+        self.operation_tree_widget = OperationTreeWidget(self.file.data.variables)
+        self.condition_tree_widget = ConditionTreeWidget(self.file.data.variables)
 
         # Docks and central widget
 
         self._set_dock_corners()
         self._create_left_dock_widget()
         self._create_right_dock_widget()
-        self._create_bottom_dock_widget()
+        self._create_bottom_dock_widgets()
 
         self.setCentralWidget(self.segment_text_edit)
+
+        # Menu
+
+        file_menu = self.menuBar().addMenu('Файл')
+        file_menu.addAction('Сохранить', self._save_file)
+        file_menu.addSeparator()
+        file_menu.addAction('Выход', self._exit)
 
         # Signals
 
         self.save_button.pressed.connect(self._save_file)
         self.segment_text_edit.textChanged.connect(self.chapter_tree.update_selected_segment)
 
-        self.file_state.state_changed.connect(self.on_file_state_changed)
+        FileState.state_changed.connect(self.on_file_state_changed)
 
         # Misc
-        self.setFont(QFont('Open Sans', 10))
+        QApplication.setStyle("Fusion")
+        self.setFont(QFont('Sans Serif', 10))
         self.setContentsMargins(5, 5, 5, 5)
         self.resize(1400, 800)
-        self.on_file_state_changed(self.file_state.value)
+        self.on_file_state_changed(FileState.is_dirty)
 
     def _set_dock_corners(self) -> None:
         self.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
@@ -54,42 +61,22 @@ class MainWindow(QMainWindow):
         self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea)
 
     def _create_left_dock_widget(self) -> None:
-        widget = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.chapter_tree)
-        layout.addWidget(self.save_button)
-        layout.setContentsMargins(0, 0, 0, 0)
-        widget.setLayout(layout)
-
-        dock = self._create_dock_widget('Древо истории', widget)
+        dock = self._create_dock_widget('Древо истории', self.chapter_tree)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
 
     def _create_right_dock_widget(self) -> None:
         dock = self._create_dock_widget('Переменные истории', self.variable_tree_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
-    def _create_bottom_dock_widget(self) -> None:
-        dock = self._create_dock_widget('Опции', self._generate_middle_side())
-        self.addDockWidget(Qt.BottomDockWidgetArea, dock)
-
-    def _generate_middle_side(self) -> QWidget:
-        splitter = QSplitter()
-        splitter.setOrientation(QtCore.Qt.Vertical)
-        splitter.addWidget(self.options_tree)
-        splitter.setCollapsible(0, False)
-        splitter.addWidget(self._generate_middle_bottom_side())
-        splitter.setCollapsible(1, False)
-        splitter.setSizes([200, 200])
-        return splitter
-
-    def _generate_middle_bottom_side(self) -> QWidget:
-        splitter = QSplitter()
-        splitter.addWidget(self.operation_tree_widget)
-        splitter.setCollapsible(0, False)
-        splitter.addWidget(self.condition_tree_widget)
-        splitter.setCollapsible(1, False)
-        splitter.setSizes([450, 450])
-        return splitter
+    def _create_bottom_dock_widgets(self) -> None:
+        top_dock = self._create_dock_widget('Опции', self.options_tree)
+        left_dock = self._create_dock_widget('Последствия', self.operation_tree_widget)
+        right_dock = self._create_dock_widget('Требования', self.condition_tree_widget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, top_dock)
+        self.addDockWidget(Qt.BottomDockWidgetArea, left_dock)
+        self.addDockWidget(Qt.BottomDockWidgetArea, right_dock)
+        self.splitDockWidget(top_dock, right_dock, Qt.Vertical)
+        self.splitDockWidget(right_dock, left_dock, Qt.Horizontal)
 
     def _create_dock_widget(self, title: str, widget: QWidget) -> QDockWidget:
         dock = QDockWidget(title, self)
@@ -100,11 +87,14 @@ class MainWindow(QMainWindow):
 
     def _save_file(self):
         self.file.save_changes()
-        self.file_state.set_clean()
+        FileState.set_clean()
 
-    def on_file_state_changed(self, state: FileState):
+    def _exit(self):
+        self.close()
+
+    def on_file_state_changed(self, is_dirty: FileState):
         s = f'{self.file.path} - questwriter'
-        if state == FileState.DIRTY:
+        if is_dirty:
             s += '*'
         self.setWindowTitle(s)
 
@@ -113,10 +103,10 @@ class MainWindow(QMainWindow):
             self._save_file()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
-        if self.file_state.value == FileState.DIRTY:
+        if FileState.is_dirty:
             title = 'Выход'
             msg = 'Остались несохраненные изменения, вы действительно хотите выйти?'
-            reply = QMessageBox.question(self, title, msg, QMessageBox.Yes, QMessageBox.No)
+            reply = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply != QMessageBox.Yes:
                 event.ignore()
                 return
