@@ -23,7 +23,10 @@ class OptionsTreeWidget(QTreeWidget):
 
         self.setRootIsDecorated(False)
         self.setColumnCount(3)
-        self.header().setSectionResizeMode(QHeaderView.Stretch)
+        self.header().setStretchLastSection(False)
+        self.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.header().setSectionResizeMode(2, QHeaderView.Stretch)
         self.setHeaderHidden(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
