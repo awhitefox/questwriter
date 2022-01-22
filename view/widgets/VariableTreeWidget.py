@@ -1,8 +1,8 @@
-from typing import List, Optional
+from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QMessageBox, QDoubleSpinBox, QInputDialog
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QMessageBox, QDoubleSpinBox
 from questlib import Chapter, VariableDefinition, CompareTo
 
 from model.defaults import default_variable_definition
@@ -47,7 +47,8 @@ class VariableTreeWidget(QTreeWidget):
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
 
-        menu.addAction('Добавить переменную', self._add_variable)
+        menu.addAction('Добавить флаг', self._add_bool_variable)
+        menu.addAction('Добавить число', self._add_float_variable)
 
         menu.addSeparator()
 
@@ -66,12 +67,14 @@ class VariableTreeWidget(QTreeWidget):
 
         menu.exec_(self.viewport().mapToGlobal(position))
 
-    def _add_variable(self) -> None:
-        selected_i = self.indexOfTopLevelItem(self.currentItem())
+    def _add_bool_variable(self) -> None:
+        self._add_variable(default_variable_definition(False))
 
-        new = self._generate_new_variable()
-        if new is None:
-            return
+    def _add_float_variable(self) -> None:
+        self._add_variable(default_variable_definition(0.0))
+
+    def _add_variable(self, new: VariableDefinition) -> None:
+        selected_i = self.indexOfTopLevelItem(self.currentItem())
 
         self.variables.insert(selected_i + 1, new)
         FileState.set_dirty()
@@ -79,18 +82,6 @@ class VariableTreeWidget(QTreeWidget):
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
         new_item.init_widgets(self)
-
-    def _generate_new_variable(self) -> Optional[VariableDefinition]:
-        title = '?'
-        msg = 'Выберите тип переменной'
-        options = ['Флаг', 'Число']
-        s, ok = QInputDialog.getItem(self, title, msg, options, 0, False)
-        if ok:
-            if s == options[0]:
-                return default_variable_definition(False)
-            if s == options[1]:
-                return default_variable_definition(0.0)
-        return None
 
     def _move_variable(self, delta: int) -> None:
         index = self.indexOfTopLevelItem(self.currentItem())
