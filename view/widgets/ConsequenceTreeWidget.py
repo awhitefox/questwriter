@@ -3,16 +3,16 @@ from typing import List, Optional, Type
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QDoubleSpinBox
-from questlib import Option, VariableDefinition, Condition, ComparisonType, CompareTo
+from questlib import Option, Variable, Consequence, Operation
 
-from model.defaults import default_condition
+from model.defaults import default_consequence
 from utils import find_index
 from view import FileState, EditorState
 from view.widgets import BoolComboBox
 
 
-class ConditionTreeWidget(QTreeWidget):
-    def __init__(self, variables: List[VariableDefinition]):
+class ConsequenceTreeWidget(QTreeWidget):
+    def __init__(self, variables: List[Variable]):
         super().__init__()
         self.variables = variables
         self.option: Optional[Option] = None
@@ -32,74 +32,74 @@ class ConditionTreeWidget(QTreeWidget):
 
     def _generate_items(self) -> None:
         self.clear()
-        if self.option.conditions is not None:
+        if self.option.consequences is not None:
             self.setEnabled(True)
-            for o in self.option.conditions:
+            for o in self.option.consequences:
                 item = self._generate_item(o)
                 self.addTopLevelItem(item)
                 item.init_widgets(self)
         else:
             self.setEnabled(False)
 
-    def _generate_item(self, condition: Condition) -> 'ConditionTreeWidgetItem':
-        return ConditionTreeWidgetItem(self.variables, condition)
+    def _generate_item(self, consequence: Consequence) -> 'ConsequenceTreeWidgetItem':
+        return ConsequenceTreeWidgetItem(self.variables, consequence)
 
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
 
-        menu.addAction('Добавить условие', self._add_condition)
+        menu.addAction('Добавить последствие', self._add_consequence)
         menu.actions()[-1].setEnabled(len(self.variables) > 0)
 
         menu.addSeparator()
 
         index = self.indexOfTopLevelItem(self.currentItem())
-        menu.addAction('Вверх', lambda: self._move_condition(-1))
-        if index == 0 or len(self.option.conditions) == 0:
+        menu.addAction('Вверх', lambda: self._move_consequence(-1))
+        if index == 0 or len(self.option.consequences) == 0:
             menu.actions()[-1].setEnabled(False)
-        menu.addAction('Вниз', lambda: self._move_condition(1))
-        if index + 1 >= len(self.option.conditions):
+        menu.addAction('Вниз', lambda: self._move_consequence(1))
+        if index + 1 >= len(self.option.consequences):
             menu.actions()[-1].setEnabled(False)
 
         menu.addSeparator()
 
-        menu.addAction('Удалить', self._delete_condition)
-        menu.actions()[-1].setEnabled(bool(self.option.conditions))
+        menu.addAction('Удалить', self._delete_consequence)
+        menu.actions()[-1].setEnabled(bool(self.option.consequences))
 
         menu.exec_(self.viewport().mapToGlobal(position))
 
-    def _add_condition(self) -> None:
+    def _add_consequence(self) -> None:
         selected_i = self.indexOfTopLevelItem(self.currentItem())
-        new = default_condition(self.variables[0])
-        self.option.conditions.insert(selected_i + 1, new)
+        new = default_consequence(self.variables[0])
+        self.option.consequences.insert(selected_i + 1, new)
         FileState.set_dirty()
 
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
         new_item.init_widgets(self)
 
-    def _move_condition(self, delta: int) -> None:
+    def _move_consequence(self, delta: int) -> None:
         index = self.indexOfTopLevelItem(self.currentItem())
 
-        condition = self.option.conditions.pop(index)
-        self.option.conditions.insert(index + delta, condition)
+        consequence = self.option.consequences.pop(index)
+        self.option.consequences.insert(index + delta, consequence)
 
         self.takeTopLevelItem(index)
-        condition_item = self._generate_item(condition)
-        self.insertTopLevelItem(index + delta, condition_item)
-        condition_item.init_widgets(self)
+        consequence_item = self._generate_item(consequence)
+        self.insertTopLevelItem(index + delta, consequence_item)
+        consequence_item.init_widgets(self)
 
-        self.setCurrentItem(condition_item)
+        self.setCurrentItem(consequence_item)
         FileState.set_dirty()
 
-    def _delete_condition(self) -> None:
+    def _delete_consequence(self) -> None:
         title = 'Удалить'
 
         selected_i = self.indexOfTopLevelItem(self.currentItem())
 
-        msg = 'Удалить условие?'
+        msg = 'Удалить последствие?'
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
-            del self.option.conditions[selected_i]
+            del self.option.consequences[selected_i]
             FileState.set_dirty()
             self.takeTopLevelItem(selected_i)
 
@@ -114,14 +114,14 @@ class ConditionTreeWidget(QTreeWidget):
             self.setEnabled(False)
 
 
-class ConditionTreeWidgetItem(QTreeWidgetItem):
-    def __init__(self, variables: List[VariableDefinition], c: Condition):
+class ConsequenceTreeWidgetItem(QTreeWidgetItem):
+    def __init__(self, variables: List[Variable], c: Consequence):
         super().__init__()
         self.variables = variables
-        self.condition = c
+        self.consequence = c
         self._tree = None
 
-        current_index = find_index(variables, lambda x: x.id == c.left)
+        current_index = find_index(variables, lambda x: x.id == c.variable_id)
         self.variable_type = self.variables[current_index].type
 
         self.variable_combo_box = QComboBox()
@@ -144,34 +144,31 @@ class ConditionTreeWidgetItem(QTreeWidgetItem):
         tree_widget.setItemWidget(self, 2, self.value_widget)
 
     def _set_variable_type(self, var_type: Type) -> None:
-        if self.condition.compare_to == CompareTo.Variable:
-            raise AttributeError('Comparison to variables is not supported yet')  # TODO
-
         if self.value_widget is not None:
             self.value_widget.disconnect()
 
         b = self.type_combo_box.blockSignals(True)
         self.type_combo_box.clear()
-        self.type_combo_box.addItems((i.value for i in ComparisonType if i.is_available_for(var_type)))
+        self.type_combo_box.addItems((i.value for i in Operation if i.is_available_for(var_type)))
         self.type_combo_box.blockSignals(b)
 
-        if not self.condition.comparison.is_available_for(var_type):
-            self.condition.comparison = ComparisonType.Equal
-        self.type_combo_box.setCurrentIndex(list(ComparisonType).index(self.condition.comparison))
+        if not self.consequence.type.is_available_for(var_type):
+            self.consequence.type = Operation.Set
+        self.type_combo_box.setCurrentIndex(list(Operation).index(self.consequence.type))
 
         if var_type is bool:
-            if type(self.condition.right) is not var_type:
-                self.condition.right = False
+            if type(self.consequence.value) is not var_type:
+                self.consequence.value = False
 
             self.value_widget = BoolComboBox()
-            self.value_widget.value = self.condition.right
+            self.value_widget.value = self.consequence.value
             self.value_widget.value_changed.connect(self.on_value_change)
         elif var_type is float:
-            if type(self.condition.right) is not var_type:
-                self.condition.right = 0.0
+            if type(self.consequence.value) is not var_type:
+                self.consequence.value = 0.0
 
             self.value_widget = QDoubleSpinBox()
-            self.value_widget.setValue(self.condition.right)
+            self.value_widget.setValue(self.consequence.value)
             self.value_widget.setRange(-float('inf'), float('inf'))
             self.value_widget.valueChanged.connect(self.on_value_change)
         else:
@@ -182,18 +179,18 @@ class ConditionTreeWidgetItem(QTreeWidgetItem):
 
     def on_variable_change(self, index: int) -> None:
         new = self.variables[index]
-        if type(self.condition.right) is not new.type:
+        if type(self.consequence.value) is not new.type:
             self._set_variable_type(new.type)
-        self.condition.left = new.id
+        self.consequence.variable_id = new.id
         FileState.set_dirty()
 
     def on_type_change(self, *_) -> None:
-        self.condition.comparison = ComparisonType(self.type_combo_box.currentText())
+        self.consequence.type = Operation(self.type_combo_box.currentText())
         FileState.set_dirty()
 
     def on_value_change(self, *_):
         if isinstance(self.value_widget, BoolComboBox):
-            self.condition.right = self.value_widget.value
+            self.consequence.value = self.value_widget.value
         elif isinstance(self.value_widget, QDoubleSpinBox):
-            self.condition.right = self.value_widget.value()
+            self.consequence.value = self.value_widget.value()
         FileState.set_dirty()

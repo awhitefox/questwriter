@@ -29,13 +29,13 @@ def default_option(goto_branch_id: str, goto_segment_id: str) -> Option:
     return Option('Новая опция', goto)
 
 
-def default_variable_definition(initial_value: T_VariableValue) -> VariableDefinition:
-    return VariableDefinition('Новая переменная', initial_value)
+def default_variable_definition(initial_value: T_VariableValue) -> Variable:
+    return Variable('Новая переменная', initial_value)
 
 
-def default_variable_operation(var: VariableDefinition) -> VariableOperation:
-    return VariableOperation(var.id, OperationType.Set, var.initial_value)
+def default_consequence(var: Variable) -> Consequence:
+    return Consequence(var.id, Operation.Set, var.initial_value)
 
 
-def default_condition(var: VariableDefinition) -> Condition:
-    return Condition(CompareTo.Constant, ComparisonType.Equal, var.id, var.initial_value)
+def default_requirement(var: Variable) -> Requirement:
+    return Requirement(CompareTo.Constant, Comparison.Equal, var.id, var.initial_value)

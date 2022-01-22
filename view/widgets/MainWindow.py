@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QDockWidget, QApp
 
 from model import ChapterFileWrapper
 from view import FileState
-from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, OperationTreeWidget, ConditionTreeWidget, VariableTreeWidget
+from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, ConsequenceTreeWidget, RequirementTreeWidget, VariableTreeWidget
 
 
 class MainWindow(QMainWindow):
@@ -20,8 +20,8 @@ class MainWindow(QMainWindow):
         self.options_tree = OptionsTreeWidget(self.file.data, self.chapter_tree)
 
         self.variable_tree_widget = VariableTreeWidget(self.file.data)
-        self.operation_tree_widget = OperationTreeWidget(self.file.data.variables)
-        self.condition_tree_widget = ConditionTreeWidget(self.file.data.variables)
+        self.consequence_tree_widget = ConsequenceTreeWidget(self.file.data.variables)
+        self.requirement_tree_widget = RequirementTreeWidget(self.file.data.variables)
 
         # Docks and central widget
 
@@ -71,8 +71,8 @@ class MainWindow(QMainWindow):
 
     def _create_bottom_dock_widgets(self) -> None:
         top_dock = self._create_dock_widget('Опции', self.options_tree)
-        left_dock = self._create_dock_widget('Последствия', self.operation_tree_widget)
-        right_dock = self._create_dock_widget('Требования', self.condition_tree_widget)
+        left_dock = self._create_dock_widget('Последствия', self.consequence_tree_widget)
+        right_dock = self._create_dock_widget('Требования', self.requirement_tree_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, top_dock)
         self.addDockWidget(Qt.BottomDockWidgetArea, left_dock)
         self.addDockWidget(Qt.BottomDockWidgetArea, right_dock)

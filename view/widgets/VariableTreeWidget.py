@@ -3,7 +3,7 @@ from typing import List
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QMessageBox, QDoubleSpinBox
-from questlib import Chapter, VariableDefinition, CompareTo
+from questlib import Chapter, Variable, CompareTo
 
 from model.defaults import default_variable_definition
 from view import FileState, EditorState
@@ -14,7 +14,7 @@ class VariableTreeWidget(QTreeWidget):
     def __init__(self, chapter: Chapter):
         super().__init__()
         self.chapter: Chapter = chapter
-        self.variables: List[VariableDefinition] = chapter.variables
+        self.variables: List[Variable] = chapter.variables
 
         self.setRootIsDecorated(False)
         self.setColumnCount(2)
@@ -38,7 +38,7 @@ class VariableTreeWidget(QTreeWidget):
             item.init_widgets(self)
 
     # noinspection PyMethodMayBeStatic
-    def _generate_item(self, variable: VariableDefinition) -> 'VariableTreeWidgetItemBase':
+    def _generate_item(self, variable: Variable) -> 'VariableTreeWidgetItemBase':
         if variable.type is bool:
             return BoolTreeWidgetItem(variable)
         if variable.type is float:
@@ -73,7 +73,7 @@ class VariableTreeWidget(QTreeWidget):
     def _add_float_variable(self) -> None:
         self._add_variable(default_variable_definition(0.0))
 
-    def _add_variable(self, new: VariableDefinition) -> None:
+    def _add_variable(self, new: Variable) -> None:
         selected_i = self.indexOfTopLevelItem(self.currentItem())
 
         self.variables.insert(selected_i + 1, new)
@@ -119,14 +119,14 @@ class VariableTreeWidget(QTreeWidget):
                 continue
             for seg in br.segments:
                 for opt in seg.options:
-                    for i in range(len(opt.conditions) - 1, -1, -1):
-                        e = opt.conditions[i]
+                    for i in range(len(opt.requirements) - 1, -1, -1):
+                        e = opt.requirements[i]
                         if e.left == deleted_variable_id or (e.compare_to == CompareTo.Variable and e.right == deleted_variable_id):
-                            del opt.conditions[i]
-                    for i in range(len(opt.operations) - 1, -1, -1):
-                        e = opt.operations[i]
+                            del opt.requirements[i]
+                    for i in range(len(opt.consequences) - 1, -1, -1):
+                        e = opt.consequences[i]
                         if e.variable_id == deleted_variable_id:
-                            del opt.operations[i]
+                            del opt.consequences[i]
 
     def _on_self_item_changed(self, item: QTreeWidgetItem, column: int) -> None:
         if column == 0:
@@ -135,7 +135,7 @@ class VariableTreeWidget(QTreeWidget):
 
 
 class VariableTreeWidgetItemBase(QTreeWidgetItem):
-    def __init__(self, variable: VariableDefinition):
+    def __init__(self, variable: Variable):
         super().__init__()
         self.variable = variable
         self.value_widget = None
@@ -148,7 +148,7 @@ class VariableTreeWidgetItemBase(QTreeWidgetItem):
 
 
 class BoolTreeWidgetItem(VariableTreeWidgetItemBase):
-    def __init__(self, variable: VariableDefinition):
+    def __init__(self, variable: Variable):
         super().__init__(variable)
 
         self.value_widget = BoolComboBox()
@@ -162,7 +162,7 @@ class BoolTreeWidgetItem(VariableTreeWidgetItemBase):
 
 
 class FloatTreeWidgetItem(VariableTreeWidgetItemBase):
-    def __init__(self, variable: VariableDefinition):
+    def __init__(self, variable: Variable):
         super().__init__(variable)
 
         self.value_widget = QDoubleSpinBox()
