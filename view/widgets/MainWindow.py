@@ -40,6 +40,9 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction('Выход', self._exit)
 
+        window_menu = self.menuBar().addMenu('Окна')
+        window_menu.addActions(self.createPopupMenu().actions())
+
         # Signals
 
         self.segment_text_edit.textChanged.connect(self.chapter_tree.update_selected_segment)
@@ -80,7 +83,7 @@ class MainWindow(QMainWindow):
         dock = QDockWidget(title, self)
         dock.setWidget(widget)
         dock.setFloating(False)
-        dock.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
+        dock.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         return dock
 
     def _save_file(self):
