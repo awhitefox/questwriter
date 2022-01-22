@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QM
 from questlib import Chapter, VariableDefinition, CompareTo
 
 from model.defaults import default_variable_definition
-from view import FileState
+from view import FileState, EditorState
 
 
 class VariableTreeWidget(QTreeWidget):
@@ -45,7 +45,19 @@ class VariableTreeWidget(QTreeWidget):
         menu = QMenu()
 
         menu.addAction('Добавить переменную', self._add_variable)
+
         menu.addSeparator()
+
+        index = self.indexOfTopLevelItem(self.currentItem())
+        menu.addAction('Вверх', lambda: self._move_variable(-1))
+        if index == 0:
+            menu.actions()[-1].setEnabled(False)
+        menu.addAction('Вниз', lambda: self._move_variable(1))
+        if index + 1 == len(self.variables):
+            menu.actions()[-1].setEnabled(False)
+
+        menu.addSeparator()
+
         menu.addAction('Удалить', self._delete_variable)
         menu.actions()[-1].setEnabled(len(self.variables) > 0)
 
@@ -76,6 +88,23 @@ class VariableTreeWidget(QTreeWidget):
             if s == options[1]:
                 return default_variable_definition(0.0)
         return None
+
+    def _move_variable(self, delta: int) -> None:
+        index = self.indexOfTopLevelItem(self.currentItem())
+
+        var = self.variables.pop(index)
+        self.variables.insert(index + delta, var)
+
+        self.takeTopLevelItem(index)
+        var_item = self._generate_item(var)
+        self.insertTopLevelItem(index + delta, var_item)
+        var_item.init_widgets(self)
+
+        self.setCurrentItem(var_item)
+        FileState.set_dirty()
+
+        if EditorState.current_option is not None:
+            EditorState.current_option = EditorState.current_option  # trigger variable ComboBoxes update
 
     def _delete_variable(self) -> None:
         title = 'Удалить'
