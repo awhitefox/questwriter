@@ -57,10 +57,23 @@ class OptionsTreeWidget(QTreeWidget):
     def _context_menu(self, position: QPoint) -> None:
         menu = QMenu()
         menu.addAction('Добавить опцию', self._add_option)
+
         menu.addSeparator()
+
+        index = self.indexOfTopLevelItem(self.currentItem())
+        menu.addAction('Вверх', lambda: self._move_option(-1))
+        if index == 0:
+            menu.actions()[-1].setEnabled(False)
+        menu.addAction('Вниз', lambda: self._move_option(1))
+        if index + 1 == len(self.options):
+            menu.actions()[-1].setEnabled(False)
+
+        menu.addSeparator()
+
         menu.addAction('Удалить', self._delete_option)
         if len(self.options) == 1:
             menu.actions()[-1].setEnabled(False)
+
         menu.exec_(self.viewport().mapToGlobal(position))
 
     def _add_option(self) -> None:
@@ -75,6 +88,20 @@ class OptionsTreeWidget(QTreeWidget):
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
         new_item.init_widgets(self)
+
+    def _move_option(self, delta: int) -> None:
+        index = self.indexOfTopLevelItem(self.currentItem())
+
+        option = self.options.pop(index)
+        self.options.insert(index + delta, option)
+
+        self.takeTopLevelItem(index)
+        option_item = self._generate_item(option)
+        self.insertTopLevelItem(index + delta, option_item)
+        option_item.init_widgets(self)
+
+        self.setCurrentItem(option_item)
+        FileState.set_dirty()
 
     def _delete_option(self) -> None:
         title = 'Удалить'
