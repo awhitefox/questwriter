@@ -4,16 +4,17 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
 
-from questlib import VariableDefinition
+from questlib import Chapter, VariableDefinition, CompareTo
 
 from model.defaults import default_variable_definition
 from view import FileState
 
 
 class VariableTreeWidget(QTreeWidget):
-    def __init__(self, variables: List[VariableDefinition]):
+    def __init__(self, chapter: Chapter):
         super().__init__()
-        self.variables = variables
+        self.chapter: Chapter = chapter
+        self.variables: List[VariableDefinition] = chapter.variables
 
         self.setRootIsDecorated(False)
         self.setColumnCount(2)
@@ -84,9 +85,25 @@ class VariableTreeWidget(QTreeWidget):
         msg = f'Удалить переменную {self.variables[selected_i].name}?'
         res = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if res == QMessageBox.Yes:
+            self._cleanup_after_variable_deletion(self.variables[selected_i].id)
             del self.variables[selected_i]
             FileState.set_dirty()
             self.takeTopLevelItem(selected_i)
+
+    def _cleanup_after_variable_deletion(self, deleted_variable_id: str) -> None:
+        for br in self.chapter.branches:
+            if br.is_endings_branch:
+                continue
+            for seg in br.segments:
+                for opt in seg.options:
+                    for i in range(len(opt.conditions) - 1, -1, -1):
+                        e = opt.conditions[i]
+                        if e.left == deleted_variable_id or (e.compare_to == CompareTo.Variable and e.right == deleted_variable_id):
+                            del opt.conditions[i]
+                    for i in range(len(opt.operations) - 1, -1, -1):
+                        e = opt.operations[i]
+                        if e.variable_id == deleted_variable_id:
+                            del opt.operations[i]
 
     def _on_self_item_changed(self, item: QTreeWidgetItem, column: int) -> None:
         if column == 0:

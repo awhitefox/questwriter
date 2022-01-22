@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
         self.segment_text_edit = SegmentTextEdit()
         self.options_tree = OptionsTreeWidget(self.file.data, self.chapter_tree)
 
-        self.variable_tree_widget = VariableTreeWidget(self.file.data.variables)
+        self.variable_tree_widget = VariableTreeWidget(self.file.data)
         self.operation_tree_widget = OperationTreeWidget(self.file.data.variables)
         self.condition_tree_widget = ConditionTreeWidget(self.file.data.variables)
 
