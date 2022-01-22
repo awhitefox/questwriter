@@ -1,7 +1,7 @@
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QWidget, QVBoxLayout, QMessageBox, QDockWidget, QApplication
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QDockWidget, QApplication
 
 from model import ChapterFileWrapper
 from view import FileState
@@ -16,7 +16,6 @@ class MainWindow(QMainWindow):
         # Widgets
 
         self.chapter_tree = ChapterTreeWidget(self.file.data)
-        self.save_button = QPushButton('Сохранить')
         self.segment_text_edit = SegmentTextEdit()
         self.options_tree = OptionsTreeWidget(self.file.data, self.chapter_tree)
 
@@ -43,9 +42,7 @@ class MainWindow(QMainWindow):
 
         # Signals
 
-        self.save_button.pressed.connect(self._save_file)
         self.segment_text_edit.textChanged.connect(self.chapter_tree.update_selected_segment)
-
         FileState.state_changed.connect(self.on_file_state_changed)
 
         # Misc
