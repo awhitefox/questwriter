@@ -31,6 +31,7 @@ class MainWindow(QMainWindow):
         self._create_right_dock_widget()
         self._create_bottom_dock_widgets()
 
+        self.setDockNestingEnabled(True)
         self.setCentralWidget(self.segment_text_edit)
 
         # Menu
