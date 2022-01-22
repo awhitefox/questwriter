@@ -2,11 +2,11 @@ from typing import List, Optional, Type
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox
 from questlib import Option, VariableDefinition, Condition, ComparisonType, CompareTo
 
 from model.defaults import default_condition
-from utils import find_index, find
+from utils import find_index
 from view import FileState, EditorState
 
 
@@ -14,7 +14,7 @@ class ConditionTreeWidget(QTreeWidget):
     def __init__(self, variables: List[VariableDefinition]):
         super().__init__()
         self.variables = variables
-        self.option = None
+        self.option: Optional[Option] = None
 
         self.setColumnCount(3)
         self.header().setSectionResizeMode(QHeaderView.Stretch)
@@ -47,6 +47,16 @@ class ConditionTreeWidget(QTreeWidget):
 
         menu.addSeparator()
 
+        index = self.indexOfTopLevelItem(self.currentItem())
+        menu.addAction('Вверх', lambda: self._move_condition(-1))
+        if index == 0:
+            menu.actions()[-1].setEnabled(False)
+        menu.addAction('Вниз', lambda: self._move_condition(1))
+        if index + 1 == len(self.option.conditions):
+            menu.actions()[-1].setEnabled(False)
+
+        menu.addSeparator()
+
         menu.addAction('Удалить', self._delete_condition)
         menu.actions()[-1].setEnabled(bool(self.option.conditions))
 
@@ -61,6 +71,20 @@ class ConditionTreeWidget(QTreeWidget):
         new_item = self._generate_item(new)
         self.insertTopLevelItem(selected_i + 1, new_item)
         new_item.init_widgets(self)
+
+    def _move_condition(self, delta: int) -> None:
+        index = self.indexOfTopLevelItem(self.currentItem())
+
+        condition = self.option.conditions.pop(index)
+        self.option.conditions.insert(index + delta, condition)
+
+        self.takeTopLevelItem(index)
+        condition_item = self._generate_item(condition)
+        self.insertTopLevelItem(index + delta, condition_item)
+        condition_item.init_widgets(self)
+
+        self.setCurrentItem(condition_item)
+        FileState.set_dirty()
 
     def _delete_condition(self) -> None:
         title = 'Удалить'
