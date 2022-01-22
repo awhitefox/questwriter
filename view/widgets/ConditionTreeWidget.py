@@ -2,12 +2,13 @@ from typing import List, Optional, Type
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox, QMenu, QMessageBox, QDoubleSpinBox
 from questlib import Option, VariableDefinition, Condition, ComparisonType, CompareTo
 
 from model.defaults import default_condition
 from utils import find_index
 from view import FileState, EditorState
+from view.widgets import BoolComboBox
 
 
 class ConditionTreeWidget(QTreeWidget):
@@ -158,9 +159,9 @@ class ConditionTreeWidgetItem(QTreeWidgetItem):
             if type(self.condition.right) is not var_type:
                 self.condition.right = False
 
-            self.value_widget = QCheckBox()
-            self.value_widget.setCheckState(2 if self.condition.right else 0)  # use 2 to avoid tristate
-            self.value_widget.stateChanged.connect(self.on_value_change)
+            self.value_widget = BoolComboBox()
+            self.value_widget.value = self.condition.right
+            self.value_widget.value_changed.connect(self.on_value_change)
         elif var_type is float:
             if type(self.condition.right) is not var_type:
                 self.condition.right = 0.0
@@ -187,8 +188,8 @@ class ConditionTreeWidgetItem(QTreeWidgetItem):
         FileState.set_dirty()
 
     def on_value_change(self, *_):
-        if isinstance(self.value_widget, QCheckBox):
-            self.condition.right = bool(self.value_widget.checkState())  # convert to bool to avoid tristate
+        if isinstance(self.value_widget, BoolComboBox):
+            self.condition.right = self.value_widget.value
         elif isinstance(self.value_widget, QDoubleSpinBox):
             self.condition.right = self.value_widget.value()
         FileState.set_dirty()

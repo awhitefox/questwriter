@@ -2,12 +2,12 @@ from typing import List, Optional
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QMessageBox, QCheckBox, QDoubleSpinBox, QInputDialog
-
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QMenu, QMessageBox, QDoubleSpinBox, QInputDialog
 from questlib import Chapter, VariableDefinition, CompareTo
 
 from model.defaults import default_variable_definition
 from view import FileState, EditorState
+from view.widgets import BoolComboBox
 
 
 class VariableTreeWidget(QTreeWidget):
@@ -157,13 +157,13 @@ class BoolTreeWidgetItem(VariableTreeWidgetItemBase):
     def __init__(self, variable: VariableDefinition):
         super().__init__(variable)
 
-        self.value_widget = QCheckBox()
-        self.value_widget.setCheckState(2 if variable.initial_value else 0)
+        self.value_widget = BoolComboBox()
+        self.value_widget.value = variable.initial_value
 
-        self.value_widget.stateChanged.connect(self.on_check_box_value_changed)
+        self.value_widget.value_changed.connect(self.on_value_change)
 
-    def on_check_box_value_changed(self, _: int) -> None:
-        self.variable.initial_value = self.value_widget.checkState()
+    def on_value_change(self, *_) -> None:
+        self.variable.initial_value = self.value_widget.value
         FileState.set_dirty()
 
 
@@ -175,8 +175,8 @@ class FloatTreeWidgetItem(VariableTreeWidgetItemBase):
         self.value_widget.setValue(variable.initial_value)
         self.value_widget.setRange(-float('inf'), float('inf'))
 
-        self.value_widget.valueChanged.connect(self.on_spin_box_value_changed)
+        self.value_widget.valueChanged.connect(self.on_value_change)
 
-    def on_spin_box_value_changed(self, _: int) -> None:
+    def on_value_change(self, *_) -> None:
         self.variable.initial_value = self.value_widget.value()
         FileState.set_dirty()

@@ -1,3 +1,4 @@
+from .BoolComboBox import BoolComboBox
 from .VariableTreeWidget import VariableTreeWidget
 from .ConditionTreeWidget import ConditionTreeWidget
 from .OperationTreeWidget import OperationTreeWidget
