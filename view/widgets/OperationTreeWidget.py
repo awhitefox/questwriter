@@ -54,10 +54,10 @@ class OperationTreeWidget(QTreeWidget):
 
         index = self.indexOfTopLevelItem(self.currentItem())
         menu.addAction('Вверх', lambda: self._move_operation(-1))
-        if index == 0:
+        if index == 0 or len(self.option.operations) == 0:
             menu.actions()[-1].setEnabled(False)
         menu.addAction('Вниз', lambda: self._move_operation(1))
-        if index + 1 == len(self.option.operations):
+        if index + 1 >= len(self.option.operations):
             menu.actions()[-1].setEnabled(False)
 
         menu.addSeparator()

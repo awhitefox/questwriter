@@ -54,10 +54,10 @@ class ConditionTreeWidget(QTreeWidget):
 
         index = self.indexOfTopLevelItem(self.currentItem())
         menu.addAction('Вверх', lambda: self._move_condition(-1))
-        if index == 0:
+        if index == 0 or len(self.option.conditions) == 0:
             menu.actions()[-1].setEnabled(False)
         menu.addAction('Вниз', lambda: self._move_condition(1))
-        if index + 1 == len(self.option.conditions):
+        if index + 1 >= len(self.option.conditions):
             menu.actions()[-1].setEnabled(False)
 
         menu.addSeparator()
