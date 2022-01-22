@@ -18,8 +18,11 @@ class VariableTreeWidget(QTreeWidget):
 
         self.setRootIsDecorated(False)
         self.setColumnCount(2)
-        self.setHeaderLabels(['Имя переменной', 'Начальное значение'])
-        self.header().setSectionResizeMode(QHeaderView.Stretch)
+        self.header().setStretchLastSection(False)
+        self.header().setMinimumSectionSize(80)
+        self.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.setHeaderLabels(['Имя переменной', 'Нач. знач.'])
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
 

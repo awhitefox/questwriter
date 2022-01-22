@@ -18,7 +18,11 @@ class ConditionTreeWidget(QTreeWidget):
         self.option: Optional[Option] = None
 
         self.setColumnCount(3)
-        self.header().setSectionResizeMode(QHeaderView.Stretch)
+        self.header().setStretchLastSection(False)
+        self.header().setMinimumSectionSize(80)
+        self.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.setHeaderHidden(True)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._context_menu)
