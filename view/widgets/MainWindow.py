@@ -1,7 +1,10 @@
+import os
+from configparser import ConfigParser
 from typing import Callable
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QDockWidget, QApplication, QActionGroup, QAction, QFontDialog
 
 from model import ChapterFileWrapper
@@ -11,9 +14,29 @@ from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, 
 
 
 class MainWindow(QMainWindow):
+    CONFIG_PATH = os.path.expanduser('~/Documents/questwriter.ini')
+    CONFIG_ENCODING = 'utf-8'
+
     def __init__(self, file_path: str):
         super().__init__()
         self.file = ChapterFileWrapper(file_path)
+
+        # Config
+
+        self.config = ConfigParser()
+
+        QApplication.setStyle("Fusion")
+        self.default_font = QApplication.font()
+        self.default_font.setPointSize(10)
+        self.setFont(self.default_font)
+
+        self.palettes = {
+            'Стандартная': QApplication.palette(),
+            'Тёмная': DarkPalette()
+        }
+        self.current_palette = list(self.palettes.keys())[0]
+
+        self._load_config()
 
         # Widgets
 
@@ -48,13 +71,16 @@ class MainWindow(QMainWindow):
         font_menu.addAction('Изменить...', self._change_font)
         font_menu.addAction('По умолчанию', lambda: self.setFont(self.default_font))
 
-        themes_menu = appearance_menu.addMenu('Темы')
-        themes_group = QActionGroup(self)
-        themes_group.addAction(_create_action('Стандартная', lambda: QApplication.setPalette(self.default_palette))).setCheckable(True)
-        themes_group.addAction(_create_action('Тёмная', lambda: QApplication.setPalette(DarkPalette()))).setCheckable(True)
-        themes_group.actions()[0].setChecked(True)
-        themes_group.setExclusive(True)
-        themes_menu.addActions(themes_group.actions())
+        palette_menu = appearance_menu.addMenu('Палитры')
+        palette_group = QActionGroup(self)
+        for key in self.palettes:
+            action = _create_action(key, self._change_palette)
+            action.setCheckable(True)
+            if key == self.current_palette:
+                action.setChecked(True)
+            palette_group.addAction(action)
+        palette_group.setExclusive(True)
+        palette_menu.addActions(palette_group.actions())
 
         window_menu = self.menuBar().addMenu('Окна')
         window_menu.addActions(self.createPopupMenu().actions())
@@ -65,12 +91,6 @@ class MainWindow(QMainWindow):
         FileState.state_changed.connect(self.on_file_state_changed)
 
         # Misc
-        QApplication.setStyle("Fusion")
-        self.default_font = QApplication.font()
-        self.default_font.setPointSize(10)
-        self.setFont(self.default_font)
-        self.default_palette = QApplication.palette()
-
         self.setContentsMargins(5, 5, 5, 5)
         self.resize(1400, 800)
         self.on_file_state_changed(FileState.is_dirty)
@@ -106,19 +126,58 @@ class MainWindow(QMainWindow):
         dock.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetClosable)
         return dock
 
-    def _save_file(self):
+    def _save_file(self) -> None:
         self.file.save_changes()
         FileState.set_clean()
 
-    def _exit(self):
+    def _exit(self) -> None:
         self.close()
 
-    def _change_font(self):
+    def _load_config(self) -> None:
+        try:
+            self.config.read(self.CONFIG_PATH, encoding=self.CONFIG_ENCODING)
+            self.current_palette = self.config['palette']['key']
+            QApplication.setPalette(self.palettes[self.current_palette])
+
+            font = QFont(self.config['font']['family'], float(self.config['font']['size']))
+            font.setWeight(float(self.config['font']['weight']))
+            font.setItalic(str_to_bool(self.config['font']['italic']))
+            font.setUnderline(str_to_bool(self.config['font']['underline']))
+            font.setStrikeOut(str_to_bool(self.config['font']['strikeout']))
+            self.setFont(font)
+        except Exception as e:
+            print(f'Failed to read config: {e.__class__.__name__}. Overwriting...')
+            self._save_config()
+
+    def _save_config(self) -> None:
+        with open(self.CONFIG_PATH, 'w', encoding=self.CONFIG_ENCODING) as f:
+            self.config['palette'] = {
+                'key': self.current_palette
+            }
+            self.config['font'] = {
+                'family': self.font().family(),
+                'size': self.font().pointSize(),
+                'weight': self.font().weight(),
+                'italic': self.font().italic(),
+                'underline': self.font().underline(),
+                'strikeout': self.font().strikeOut()
+            }
+            self.config.write(f)
+
+    def _change_palette(self) -> None:
+        action = self.sender()
+        if isinstance(action, QAction):
+            self.current_palette = action.text()
+            QApplication.setPalette(self.palettes[self.current_palette])
+            self._save_config()
+
+    def _change_font(self) -> None:
         font, ok = QFontDialog.getFont(self.font(), self, 'Изменить шрифт', QFontDialog.FontDialogOptions())
         if ok is True:
             self.setFont(font)
+            self._save_config()
 
-    def on_file_state_changed(self, is_dirty: FileState):
+    def on_file_state_changed(self, is_dirty: FileState) -> None:
         s = f'{self.file.path} - questwriter'
         if is_dirty:
             s += '*'
@@ -155,3 +214,11 @@ def _create_action(name: str, func: Callable[[], None]) -> QAction:
     action = QAction(name)
     action.triggered.connect(func)
     return action
+
+
+def str_to_bool(s: str) -> bool:
+    if s == 'True':
+        return True
+    elif s == 'False':
+        return False
+    raise ValueError('String should be either True or False')
