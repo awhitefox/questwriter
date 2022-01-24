@@ -1,4 +1,5 @@
 import os
+import sys
 from configparser import ConfigParser
 from typing import Callable
 
@@ -13,8 +14,14 @@ from view.palettes import DarkPalette
 from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, ConsequenceTreeWidget, RequirementTreeWidget, VariableTreeWidget
 
 
+def get_config_folder():
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
+
+
 class MainWindow(QMainWindow):
-    CONFIG_PATH = os.path.normpath(os.path.expanduser(os.path.join('~', 'Documents', 'questwriter.ini')))
+    CONFIG_PATH = os.path.join(get_config_folder(), 'questwriter.ini')
     CONFIG_ENCODING = 'utf-8'
 
     def __init__(self, file_path: str):
