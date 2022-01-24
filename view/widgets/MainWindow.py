@@ -150,7 +150,6 @@ class MainWindow(QMainWindow):
             self._save_config()
 
     def _save_config(self) -> None:
-        print(self.CONFIG_PATH)
         with open(self.CONFIG_PATH, 'w', encoding=self.CONFIG_ENCODING) as f:
             self.config['palette'] = {
                 'key': self.current_palette
