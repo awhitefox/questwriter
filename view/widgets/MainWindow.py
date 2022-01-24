@@ -14,7 +14,7 @@ from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, 
 
 
 class MainWindow(QMainWindow):
-    CONFIG_PATH = os.path.expanduser('~/Documents/questwriter.ini')
+    CONFIG_PATH = os.path.expanduser(os.path.join('~', 'Documents', 'questwriter.ini'))
     CONFIG_ENCODING = 'utf-8'
 
     def __init__(self, file_path: str):
