@@ -27,6 +27,7 @@ class ChapterTreeWidget(QTreeWidget):
         self.itemChanged.connect(self.on_item_changed)
 
         self.expandAll()
+        # noinspection PyTypeChecker
         self.setCurrentItem(None)
 
     def _generate_tree(self) -> None:
