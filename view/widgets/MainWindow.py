@@ -14,7 +14,7 @@ from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, 
 
 
 class MainWindow(QMainWindow):
-    CONFIG_PATH = os.path.expanduser(os.path.join('~', 'Documents', 'questwriter.ini'))
+    CONFIG_PATH = os.path.normpath(os.path.expanduser(os.path.join('~', 'Documents', 'questwriter.ini')))
     CONFIG_ENCODING = 'utf-8'
 
     def __init__(self, file_path: str):
@@ -150,6 +150,7 @@ class MainWindow(QMainWindow):
             self._save_config()
 
     def _save_config(self) -> None:
+        print(self.CONFIG_PATH)
         with open(self.CONFIG_PATH, 'w', encoding=self.CONFIG_ENCODING) as f:
             self.config['palette'] = {
                 'key': self.current_palette
