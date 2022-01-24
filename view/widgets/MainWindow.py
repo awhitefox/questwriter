@@ -1,10 +1,12 @@
+from typing import Callable
+
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QDockWidget, QApplication
+from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QDockWidget, QApplication, QActionGroup, QAction, QFontDialog
 
 from model import ChapterFileWrapper
 from view import FileState
+from view.palettes import DarkPalette
 from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, ConsequenceTreeWidget, RequirementTreeWidget, VariableTreeWidget
 
 
@@ -40,6 +42,20 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction('Выход', self._exit)
 
+        appearance_menu = self.menuBar().addMenu('Вид')
+
+        font_menu = appearance_menu.addMenu('Шрифт')
+        font_menu.addAction('Изменить...', self._change_font)
+        font_menu.addAction('По умолчанию', lambda: self.setFont(self.default_font))
+
+        themes_menu = appearance_menu.addMenu('Темы')
+        themes_group = QActionGroup(self)
+        themes_group.addAction(_create_action('Стандартная', lambda: QApplication.setPalette(self.default_palette))).setCheckable(True)
+        themes_group.addAction(_create_action('Тёмная', lambda: QApplication.setPalette(DarkPalette()))).setCheckable(True)
+        themes_group.actions()[0].setChecked(True)
+        themes_group.setExclusive(True)
+        themes_menu.addActions(themes_group.actions())
+
         window_menu = self.menuBar().addMenu('Окна')
         window_menu.addActions(self.createPopupMenu().actions())
 
@@ -50,7 +66,11 @@ class MainWindow(QMainWindow):
 
         # Misc
         QApplication.setStyle("Fusion")
-        self.setFont(QFont('Sans Serif', 10))
+        self.default_font = QApplication.font()
+        self.default_font.setPointSize(10)
+        self.setFont(self.default_font)
+        self.default_palette = QApplication.palette()
+
         self.setContentsMargins(5, 5, 5, 5)
         self.resize(1400, 800)
         self.on_file_state_changed(FileState.is_dirty)
@@ -93,6 +113,11 @@ class MainWindow(QMainWindow):
     def _exit(self):
         self.close()
 
+    def _change_font(self):
+        font, ok = QFontDialog.getFont(self.font(), self, 'Изменить шрифт', QFontDialog.FontDialogOptions())
+        if ok is True:
+            self.setFont(font)
+
     def on_file_state_changed(self, is_dirty: FileState):
         s = f'{self.file.path} - questwriter'
         if is_dirty:
@@ -124,3 +149,9 @@ class MainWindow(QMainWindow):
 
         self.file.close()
         event.accept()
+
+
+def _create_action(name: str, func: Callable[[], None]) -> QAction:
+    action = QAction(name)
+    action.triggered.connect(func)
+    return action
