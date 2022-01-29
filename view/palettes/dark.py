@@ -25,7 +25,7 @@ class DarkPalette(QPalette):
 
         self.setColor(QPalette.Active, QPalette.Button, black)
         self.setColor(QPalette.Disabled, QPalette.Base, gray)
-        self.setColor(QPalette.Disabled, QPalette.ButtonText, gray)
+        self.setColor(QPalette.Disabled, QPalette.ButtonText, white.darker())
         self.setColor(QPalette.Disabled, QPalette.WindowText, gray)
-        self.setColor(QPalette.Disabled, QPalette.Text, gray)
+        self.setColor(QPalette.Disabled, QPalette.Text, white.darker())
         self.setColor(QPalette.Disabled, QPalette.Light, black)
