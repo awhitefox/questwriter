@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
 
         font_menu = appearance_menu.addMenu('Шрифт')
         font_menu.addAction('Изменить...', self._change_font)
-        font_menu.addAction('По умолчанию', lambda: self.setFont(self.default_font))
+        font_menu.addAction('По умолчанию', self._reset_font)
 
         palette_menu = appearance_menu.addMenu('Палитры')
         palette_group = QActionGroup(self)
@@ -183,6 +183,10 @@ class MainWindow(QMainWindow):
         if ok is True:
             self.setFont(font)
             self._save_config()
+
+    def _reset_font(self) -> None:
+        self.setFont(self.default_font)
+        self._save_config()
 
     def on_file_state_changed(self, is_dirty: FileState) -> None:
         s = f'{self.file.path} - questwriter'
