@@ -3,6 +3,7 @@ from .VariableTreeWidget import VariableTreeWidget
 from .RequirementTreeWidget import RequirementTreeWidget
 from .ConsequenceTreeWidget import ConsequenceTreeWidget
 from .OptionsTreeWidget import OptionsTreeWidget
+from .SegmentImageWidget import SegmentImageWidget
 from .SegmentTextEdit import SegmentTextEdit
 from .ChapterTreeWidget import ChapterTreeWidget
 from .MainWindow import MainWindow

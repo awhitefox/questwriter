@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QDockWidget, QApp
 from model import ChapterFileWrapper
 from view import FileState
 from view.palettes import DarkPalette
-from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, ConsequenceTreeWidget, RequirementTreeWidget, VariableTreeWidget
+from view.widgets import ChapterTreeWidget, SegmentTextEdit, OptionsTreeWidget, ConsequenceTreeWidget, RequirementTreeWidget, VariableTreeWidget, SegmentImageWidget
 
 
 def get_config_folder():
@@ -49,6 +49,7 @@ class MainWindow(QMainWindow):
 
         self.chapter_tree = ChapterTreeWidget(self.file.data)
         self.segment_text_edit = SegmentTextEdit()
+        self.segment_image_widget = SegmentImageWidget()
         self.options_tree = OptionsTreeWidget(self.file.data, self.chapter_tree)
 
         self.variable_tree_widget = VariableTreeWidget(self.file.data)
@@ -59,7 +60,7 @@ class MainWindow(QMainWindow):
 
         self._set_dock_corners()
         self._create_left_dock_widget()
-        self._create_right_dock_widget()
+        self._create_right_dock_widgets()
         self._create_bottom_dock_widgets()
 
         self.setDockNestingEnabled(True)
@@ -98,6 +99,7 @@ class MainWindow(QMainWindow):
         FileState.state_changed.connect(self.on_file_state_changed)
 
         # Misc
+
         self.setContentsMargins(5, 5, 5, 5)
         self.resize(1400, 800)
         self.on_file_state_changed(FileState.is_dirty)
@@ -112,9 +114,11 @@ class MainWindow(QMainWindow):
         dock = self._create_dock_widget('Древо истории', self.chapter_tree)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
 
-    def _create_right_dock_widget(self) -> None:
-        dock = self._create_dock_widget('Переменные истории', self.variable_tree_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+    def _create_right_dock_widgets(self) -> None:
+        top_dock = self._create_dock_widget('Иллюстрация сегмента', self.segment_image_widget)
+        bottom_dock = self._create_dock_widget('Переменные истории', self.variable_tree_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, top_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, bottom_dock)
 
     def _create_bottom_dock_widgets(self) -> None:
         top_dock = self._create_dock_widget('Опции', self.options_tree)
